@@ -16,10 +16,14 @@ func (app *App) Run() {
 	if HttpPort != 0 {
 		addr = fmt.Sprintf("%s:%d", HttpAddr, HttpPort)
 	}
+
+	BeeLogger.Info("Running on %s", addr)
+
 	var (
 		err error
 		l   net.Listener
 	)
+
 	if UseFcgi {
 		if HttpPort == 0 {
 			l, err = net.Listen("unix", addr)
@@ -60,7 +64,9 @@ func (app *App) Run() {
 			}
 		}
 	}
+
 	if err != nil {
 		BeeLogger.Critical("ListenAndServe: ", err)
+		time.Sleep(100 * time.Microsecond)
 	}
 }

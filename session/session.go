@@ -18,13 +18,14 @@ type SessionStore interface {
 	Get(key interface{}) interface{}  //get session value
 	Delete(key interface{}) error     //delete session value
 	SessionID() string                //back current sessionID
-	SessionRelease()                  // release the resource
+	SessionRelease()                  // release the resource & save data to provider
 	Flush() error                     //delete all data
 }
 
 type Provider interface {
 	SessionInit(maxlifetime int64, savePath string) error
 	SessionRead(sid string) (SessionStore, error)
+	SessionExist(sid string) bool
 	SessionRegenerate(oldsid, sid string) (SessionStore, error)
 	SessionDestroy(sid string) error
 	SessionAll() int //get all active session
@@ -115,37 +116,6 @@ func NewManager(provideName, cookieName string, maxlifetime int64, savePath stri
 	}, nil
 }
 
-//get Session
-func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (session SessionStore) {
-	cookie, err := r.Cookie(manager.cookieName)
-	if err != nil || cookie.Value == "" {
-		sid := manager.sessionId(r)
-		session, _ = manager.provider.SessionRead(sid)
-		cookie = &http.Cookie{Name: manager.cookieName,
-			Value:    url.QueryEscape(sid),
-			Path:     "/",
-			HttpOnly: true,
-			Secure:   manager.secure}
-		if manager.maxage >= 0 {
-			cookie.MaxAge = manager.maxage
-		}
-		//cookie.Expires = time.Now().Add(time.Duration(manager.maxlifetime) * time.Second)
-		http.SetCookie(w, cookie)
-		r.AddCookie(cookie)
-	} else {
-		//cookie.Expires = time.Now().Add(time.Duration(manager.maxlifetime) * time.Second)
-		//cookie.HttpOnly = true
-		//cookie.Path = "/"
-		//if manager.maxage >= 0 {
-		//	cookie.MaxAge = manager.maxage
-		//	http.SetCookie(w, cookie)
-		//}
-		sid, _ := url.QueryUnescape(cookie.Value)
-		session, _ = manager.provider.SessionRead(sid)
-	}
-	return
-}
-
 //Destroy sessionid
 func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(manager.cookieName)
@@ -162,11 +132,6 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 func (manager *Manager) GetProvider(sid string) (sessions SessionStore, err error) {
 	sessions, err = manager.provider.SessionRead(sid)
 	return
-}
-
-func (manager *Manager) GC() {
-	manager.provider.SessionGC()
-	time.AfterFunc(time.Duration(manager.maxlifetime)*time.Second, func() { manager.GC() })
 }
 
 func (manager *Manager) SessionRegenerateId(w http.ResponseWriter, r *http.Request) (session SessionStore) {
@@ -200,8 +165,16 @@ func (manager *Manager) GetActiveSession() int {
 	return manager.provider.SessionAll()
 }
 
-//remote_addr cruunixnano randdata
+func (manager *Manager) SetHashFunc(hasfunc, hashkey string) {
+	manager.hashfunc = hasfunc
+	manager.hashkey = hashkey
+}
 
+func (manager *Manager) SetSecure(secure bool) {
+	manager.secure = secure
+}
+
+//remote_addr cruunixnano randdata
 func (manager *Manager) sessionId(r *http.Request) (sid string) {
 	bs := make([]byte, 24)
 	if _, err := io.ReadFull(rand.Reader, bs); err != nil {

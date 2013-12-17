@@ -8,18 +8,33 @@ import (
 )
 
 func init() {
+	// create beeapp
 	BeeApp = NewApp()
+
+	// initialize default configurations
 	AppPath = ""
+
 	StaticDir = make(map[string]string)
+	StaticDir["/static"] = "static"
+
+	StaticExtensionsToGzip = []string{".css", ".js"}
+
 	TemplateCache = make(map[string]*template.Template)
+
+	// set this to 0.0.0.0 to make this app available to externally
 	HttpAddr = ""
 	HttpPort = 8080
+
 	AppName = "beego"
+
 	RunMode = "dev" //default runmod
+
 	AutoRender = true
+
 	RecoverPanic = true
-	PprofOn = false
+
 	ViewsPath = path.Join(AppPath, "views")
+
 	SessionOn = false
 	SessionProvider = "memory"
 	SessionName = "beegosessionID"
@@ -27,18 +42,35 @@ func init() {
 	SessionSavePath = ""
 	SessionHashFunc = "sha1"
 	SessionHashKey = "beegoserversessionkey"
-	SessionCookieLifeTime = 3600
+	SessionCookieLifeTime = 0 //set cookie default is the brower life
+
 	UseFcgi = false
+
 	MaxMemory = 1 << 26 //64MB
+
 	EnableGzip = false
-	StaticDir["/static"] = "static"
+
 	AppConfigPath = path.Join(AppPath, "conf", "app.conf")
+
 	HttpServerTimeOut = 0
+
 	ErrorsShow = true
+
 	XSRFKEY = "beegoxsrf"
 	XSRFExpire = 0
+
 	TemplateLeft = "{{"
 	TemplateRight = "}}"
+
 	BeegoServerName = "beegoServer"
-	ParseConfig()
+
+	EnableAdmin = true
+	AdminHttpAddr = "127.0.0.1"
+	AdminHttpPort = 8088
+
+	err := ParseConfig()
+	if err != nil && !os.IsNotExist(err) {
+		// for init if doesn't have app.conf will not panic
+		Info(err)
+	}
 }
