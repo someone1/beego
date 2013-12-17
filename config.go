@@ -13,50 +13,50 @@ import (
 )
 
 var (
-        BeeApp        *App
-        AppName       string
-        AppPath       string
-        AppConfigPath string
-        StaticDir     map[string]string
-        TemplateCache map[string]*template.Template
-        StaticExtensionsToGzip []string //Files which should also be compressed with gzip (.js, .css, etc)
-        HttpAddr      string
-        HttpPort      int
-        HttpTLS       bool
-        HttpCertFile  string
-        HttpKeyFile   string
-        RecoverPanic  bool
-        AutoRender    bool
-        ViewsPath     string
-        RunMode       string //"dev" or "prod"
-        AppConfig     config.ConfigContainer
-        //related to session
-        GlobalSessions        *session.Manager //GlobalSessions
-        SessionOn             bool             // whether auto start session,default is false
-        SessionProvider       string           // default session provider  memory mysql redis
-        SessionName           string           // sessionName cookie's name
-        SessionGCMaxLifetime  int64            // session's gc maxlifetime
-        SessionSavePath       string           // session savepath if use mysql/redis/file this set to the connectinfo
-        SessionHashFunc       string
-        SessionHashKey        string
-        SessionCookieLifeTime int
-        UseFcgi               bool
-        MaxMemory             int64
-        EnableGzip            bool   // enable gzip
-        DirectoryIndex        bool   //enable DirectoryIndex default is false
-        EnableHotUpdate       bool   //enable HotUpdate default is false
-        HttpServerTimeOut     int64  //set httpserver timeout
-        ErrorsShow            bool   //set weather show errors
-        XSRFKEY               string //set XSRF
-        EnableXSRF            bool
-        XSRFExpire            int
-        CopyRequestBody       bool //When in raw application, You want to the reqeustbody
-        TemplateLeft          string
-        TemplateRight         string
-        BeegoServerName       string
-        EnableAdmin           bool   //enable admin module to log api time
-        AdminHttpAddr         string //admin module http addr
-        AdminHttpPort         int
+	BeeApp        *App
+	AppName       string
+	AppPath       string
+	AppConfigPath string
+	StaticDir     map[string]string
+	TemplateCache map[string]*template.Template
+	StaticExtensionsToGzip []string //Files which should also be compressed with gzip (.js, .css, etc)
+	HttpAddr      string
+	HttpPort      int
+	HttpTLS       bool
+	HttpCertFile  string
+	HttpKeyFile   string
+	RecoverPanic  bool
+	AutoRender    bool
+	ViewsPath     string
+	RunMode       string //"dev" or "prod"
+	AppConfig     config.ConfigContainer
+	//related to session
+	GlobalSessions        *session.Manager //GlobalSessions
+	SessionOn             bool             // whether auto start session,default is false
+	SessionProvider       string           // default session provider  memory mysql redis
+	SessionName           string           // sessionName cookie's name
+	SessionGCMaxLifetime  int64            // session's gc maxlifetime
+	SessionSavePath       string           // session savepath if use mysql/redis/file this set to the connectinfo
+	SessionHashFunc       string
+	SessionHashKey        string
+	SessionCookieLifeTime int
+	UseFcgi               bool
+	MaxMemory             int64
+	EnableGzip            bool   // enable gzip
+	DirectoryIndex        bool   //enable DirectoryIndex default is false
+	EnableHotUpdate       bool   //enable HotUpdate default is false
+	HttpServerTimeOut     int64  //set httpserver timeout
+	ErrorsShow            bool   //set weather show errors
+	XSRFKEY               string //set XSRF
+	EnableXSRF            bool
+	XSRFExpire            int
+	CopyRequestBody       bool //When in raw application, You want to the reqeustbody
+	TemplateLeft          string
+	TemplateRight         string
+	BeegoServerName       string
+	EnableAdmin           bool   //enable admin module to log api time
+	AdminHttpAddr         string //admin module http addr
+	AdminHttpPort         int
 )
 
 //parse config now only support ini, next will support json
