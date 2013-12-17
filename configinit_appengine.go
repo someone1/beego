@@ -4,6 +4,7 @@ package beego
 
 import (
 	"html/template"
+  "os"
 	"path"
 )
 

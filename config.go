@@ -2,9 +2,6 @@ package beego
 
 import (
 	"html/template"
-	"os"
-	"path"
-	"runtime"
 	"strconv"
 	"strings"
 
