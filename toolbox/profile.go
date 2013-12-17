@@ -1,23 +1,57 @@
-package middleware
+package toolbox
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
 	"strconv"
-	"sync/atomic"
 	"time"
 )
 
-var heapProfileCounter int32
 var startTime = time.Now()
 var pid int
 
 func init() {
 	pid = os.Getpid()
+}
+
+func ProcessInput(input string, w io.Writer) {
+	switch input {
+	case "lookup goroutine":
+		p := pprof.Lookup("goroutine")
+		p.WriteTo(w, 2)
+	case "lookup heap":
+		p := pprof.Lookup("heap")
+		p.WriteTo(w, 2)
+	case "lookup threadcreate":
+		p := pprof.Lookup("threadcreate")
+		p.WriteTo(w, 2)
+	case "lookup block":
+		p := pprof.Lookup("block")
+		p.WriteTo(w, 2)
+	case "start cpuprof":
+		StartCPUProfile()
+	case "stop cpuprof":
+		StopCPUProfile()
+	case "get memprof":
+		MemProf()
+	case "gc summary":
+		PrintGCSummary(w)
+	}
+}
+
+func MemProf() {
+	if f, err := os.Create("mem-" + strconv.Itoa(pid) + ".memprof"); err != nil {
+		log.Fatal("record memory profile failed: %v", err)
+	} else {
+		runtime.GC()
+		pprof.WriteHeapProfile(f)
+		f.Close()
+	}
 }
 
 func StartCPUProfile() {
@@ -32,73 +66,16 @@ func StopCPUProfile() {
 	pprof.StopCPUProfile()
 }
 
-func StartBlockProfile(rate int) {
-	runtime.SetBlockProfileRate(rate)
-}
-
-func StopBlockProfile() {
-	filename := "block-" + strconv.Itoa(pid) + ".pprof"
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = pprof.Lookup("block").WriteTo(f, 0); err != nil {
-		log.Fatalf(" can't write %s: %s", filename, err)
-	}
-	f.Close()
-}
-
-func SetMemProfileRate(rate int) {
-	runtime.MemProfileRate = rate
-}
-
-func GC() {
-	runtime.GC()
-}
-
-func DumpHeap() {
-	filename := "heap-" + strconv.Itoa(pid) + "-" + strconv.Itoa(int(atomic.AddInt32(&heapProfileCounter, 1))) + ".pprof"
-	f, err := os.Create(filename)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "testing: %s", err)
-		return
-	}
-	if err = pprof.WriteHeapProfile(f); err != nil {
-		fmt.Fprintf(os.Stderr, "testing: can't write %s: %s", filename, err)
-	}
-	f.Close()
-}
-
-func ShowGCStat() {
-	go func() {
-		var numGC int64
-
-		interval := time.Duration(100) * time.Millisecond
-		gcstats := &debug.GCStats{PauseQuantiles: make([]time.Duration, 100)}
-		memStats := &runtime.MemStats{}
-		for {
-			debug.ReadGCStats(gcstats)
-			if gcstats.NumGC > numGC {
-				runtime.ReadMemStats(memStats)
-
-				printGC(memStats, gcstats)
-				numGC = gcstats.NumGC
-			}
-			time.Sleep(interval)
-		}
-	}()
-}
-
-func PrintGCSummary() {
+func PrintGCSummary(w io.Writer) {
 	memStats := &runtime.MemStats{}
 	runtime.ReadMemStats(memStats)
 	gcstats := &debug.GCStats{PauseQuantiles: make([]time.Duration, 100)}
 	debug.ReadGCStats(gcstats)
 
-	printGC(memStats, gcstats)
+	printGC(memStats, gcstats, w)
 }
 
-func printGC(memStats *runtime.MemStats, gcstats *debug.GCStats) {
+func printGC(memStats *runtime.MemStats, gcstats *debug.GCStats, w io.Writer) {
 
 	if gcstats.NumGC > 0 {
 		lastPause := gcstats.Pause[0]
@@ -106,7 +83,7 @@ func printGC(memStats *runtime.MemStats, gcstats *debug.GCStats) {
 		overhead := float64(gcstats.PauseTotal) / float64(elapsed) * 100
 		allocatedRate := float64(memStats.TotalAlloc) / elapsed.Seconds()
 
-		fmt.Printf("NumGC:%d Pause:%s Pause(Avg):%s Overhead:%3.2f%% Alloc:%s Sys:%s Alloc(Rate):%s/s Histogram:%s %s %s \n",
+		fmt.Fprintf(w, "NumGC:%d Pause:%s Pause(Avg):%s Overhead:%3.2f%% Alloc:%s Sys:%s Alloc(Rate):%s/s Histogram:%s %s %s \n",
 			gcstats.NumGC,
 			toS(lastPause),
 			toS(avg(gcstats.Pause)),
@@ -122,7 +99,7 @@ func printGC(memStats *runtime.MemStats, gcstats *debug.GCStats) {
 		elapsed := time.Now().Sub(startTime)
 		allocatedRate := float64(memStats.TotalAlloc) / elapsed.Seconds()
 
-		fmt.Printf("Alloc:%s Sys:%s Alloc(Rate):%s/s\n",
+		fmt.Fprintf(w, "Alloc:%s Sys:%s Alloc(Rate):%s/s\n",
 			toH(memStats.Alloc),
 			toH(memStats.Sys),
 			toH(uint64(allocatedRate)))

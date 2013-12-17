@@ -1,14 +1,95 @@
 package orm
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+// A slice string field.
+type SliceStringField []string
+
+func (e SliceStringField) Value() []string {
+	return []string(e)
+}
+
+func (e *SliceStringField) Set(d []string) {
+	*e = SliceStringField(d)
+}
+
+func (e *SliceStringField) Add(v string) {
+	*e = append(*e, v)
+}
+
+func (e *SliceStringField) String() string {
+	return strings.Join(e.Value(), ",")
+}
+
+func (e *SliceStringField) FieldType() int {
+	return TypeCharField
+}
+
+func (e *SliceStringField) SetRaw(value interface{}) error {
+	switch d := value.(type) {
+	case []string:
+		e.Set(d)
+	case string:
+		if len(d) > 0 {
+			parts := strings.Split(d, ",")
+			v := make([]string, 0, len(parts))
+			for _, p := range parts {
+				v = append(v, strings.TrimSpace(p))
+			}
+			e.Set(v)
+		}
+	default:
+		return fmt.Errorf("<SliceStringField.SetRaw> unknown value `%v`", value)
+	}
+	return nil
+}
+
+func (e *SliceStringField) RawValue() interface{} {
+	return e.String()
+}
+
+var _ Fielder = new(SliceStringField)
+
+// A json field.
+type JsonField struct {
+	Name string
+	Data string
+}
+
+func (e *JsonField) String() string {
+	data, _ := json.Marshal(e)
+	return string(data)
+}
+
+func (e *JsonField) FieldType() int {
+	return TypeTextField
+}
+
+func (e *JsonField) SetRaw(value interface{}) error {
+	switch d := value.(type) {
+	case string:
+		return json.Unmarshal([]byte(d), e)
+	default:
+		return fmt.Errorf("<JsonField.SetRaw> unknown value `%v`", value)
+	}
+	return nil
+}
+
+func (e *JsonField) RawValue() interface{} {
+	return e.String()
+}
+
+var _ Fielder = new(JsonField)
 
 type Data struct {
 	Id       int
@@ -78,6 +159,8 @@ type User struct {
 	Posts      []*Post   `orm:"reverse(many)" json:"-"`
 	ShouldSkip string    `orm:"-"`
 	Nums       int
+	Langs      SliceStringField `orm:"size(100)"`
+	Extra      JsonField        `orm:"type(text)"`
 }
 
 func (u *User) TableIndex() [][]string {
@@ -122,7 +205,7 @@ type Post struct {
 	Content string    `orm:"type(text)"`
 	Created time.Time `orm:"auto_now_add"`
 	Updated time.Time `orm:"auto_now"`
-	Tags    []*Tag    `orm:"rel(m2m)"`
+	Tags    []*Tag    `orm:"rel(m2m);rel_through(github.com/astaxie/beego/orm.PostTags)"`
 }
 
 func (u *Post) TableIndex() [][]string {
@@ -148,9 +231,19 @@ func NewTag() *Tag {
 	return obj
 }
 
+type PostTags struct {
+	Id   int
+	Post *Post `orm:"rel(fk)"`
+	Tag  *Tag  `orm:"rel(fk)"`
+}
+
+func (m *PostTags) TableName() string {
+	return "prefix_post_tags"
+}
+
 type Comment struct {
 	Id      int
-	Post    *Post     `orm:"rel(fk)"`
+	Post    *Post     `orm:"rel(fk);column(post)"`
 	Content string    `orm:"type(text)"`
 	Parent  *Comment  `orm:"null;rel(fk)"`
 	Created time.Time `orm:"auto_now_add"`

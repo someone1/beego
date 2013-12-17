@@ -1,10 +1,8 @@
 package beego
 
 import (
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
 
@@ -22,7 +20,49 @@ func (this *TestController) List() {
 }
 
 func (this *TestController) Myext() {
-	this.Ctx.Output.Body([]byte(this.Ctx.Input.Params(":ext")))
+	this.Ctx.Output.Body([]byte(this.Ctx.Input.Param(":ext")))
+}
+
+func (this *TestController) GetUrl() {
+	this.Ctx.Output.Body([]byte(this.UrlFor(".Myext")))
+}
+
+type ResStatus struct {
+	Code int
+	Msg  string
+}
+
+type JsonController struct {
+	Controller
+}
+
+func (this *JsonController) Prepare() {
+	this.Data["json"] = "prepare"
+	this.ServeJson(true)
+}
+
+func (this *JsonController) Get() {
+	this.Data["Username"] = "astaxie"
+	this.Ctx.Output.Body([]byte("ok"))
+}
+
+func TestUrlFor(t *testing.T) {
+	handler := NewControllerRegistor()
+	handler.Add("/api/list", &TestController{}, "*:List")
+	handler.Add("/person/:last/:first", &TestController{})
+	handler.AddAuto(&TestController{})
+	if handler.UrlFor("TestController.List") != "/api/list" {
+		t.Errorf("TestController.List must equal to /api/list")
+	}
+	if handler.UrlFor("TestController.Get", ":last", "xie", ":first", "asta") != "/person/xie/asta" {
+		t.Errorf("TestController.Get must equal to /person/xie/asta")
+	}
+	if handler.UrlFor("TestController.Myext") != "/Test/Myext" {
+		t.Errorf("TestController.Myext must equal to /Test/Myext")
+	}
+	if handler.UrlFor("TestController.GetUrl") != "/Test/GetUrl" {
+		t.Errorf("TestController.GetUrl must equal to /Test/GetUrl")
+	}
 }
 
 func TestUserFunc(t *testing.T) {
@@ -120,16 +160,25 @@ func TestNotFound(t *testing.T) {
 // TestStatic tests the ability to serve static
 // content from the filesystem
 func TestStatic(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/router_test.go", nil)
+	r, _ := http.NewRequest("GET", "/static/js/jquery.js", nil)
 	w := httptest.NewRecorder()
-	pwd, _ := os.Getwd()
 
 	handler := NewControllerRegistor()
-	SetStaticPath("/", pwd)
 	handler.ServeHTTP(w, r)
 
-	testFile, _ := ioutil.ReadFile(pwd + "/routes_test.go")
-	if w.Body.String() != string(testFile) {
+	if w.Code != 404 {
 		t.Errorf("handler.Static failed to serve file")
+	}
+}
+
+func TestPrepare(t *testing.T) {
+	r, _ := http.NewRequest("GET", "/json/list", nil)
+	w := httptest.NewRecorder()
+
+	handler := NewControllerRegistor()
+	handler.Add("/json/list", &JsonController{})
+	handler.ServeHTTP(w, r)
+	if w.Body.String() != `"prepare"` {
+		t.Errorf(w.Body.String() + "user define func can't run")
 	}
 }

@@ -3,12 +3,11 @@ package beego
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/astaxie/beego/context"
-	"github.com/astaxie/beego/session"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -16,27 +15,36 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/astaxie/beego/context"
+	"github.com/astaxie/beego/session"
+)
+
+var (
+	USERSTOPRUN = errors.New("User stop run")
 )
 
 type Controller struct {
-	Ctx           *context.Context
-	Data          map[interface{}]interface{}
-	ChildName     string
-	TplNames      string
-	Layout        string
-	TplExt        string
-	_xsrf_token   string
-	gotofunc      string
-	CruSession    session.SessionStore
-	XSRFExpire    int
-	AppController interface{}
+	Ctx            *context.Context
+	Data           map[interface{}]interface{}
+	controllerName string
+	actionName     string
+	TplNames       string
+	Layout         string
+	TplExt         string
+	_xsrf_token    string
+	gotofunc       string
+	CruSession     session.SessionStore
+	XSRFExpire     int
+	AppController  interface{}
 }
 
 type ControllerInterface interface {
-	Init(ct *context.Context, childName string, app interface{})
+	Init(ct *context.Context, controllerName, actionName string, app interface{})
 	Prepare()
 	Get()
 	Post()
@@ -49,11 +57,12 @@ type ControllerInterface interface {
 	Render() error
 }
 
-func (c *Controller) Init(ctx *context.Context, childName string, app interface{}) {
+func (c *Controller) Init(ctx *context.Context, controllerName, actionName string, app interface{}) {
 	c.Data = make(map[interface{}]interface{})
 	c.Layout = ""
 	c.TplNames = ""
-	c.ChildName = childName
+	c.controllerName = controllerName
+	c.actionName = actionName
 	c.Ctx = ctx
 	c.TplExt = "tpl"
 	c.AppController = app
@@ -65,12 +74,6 @@ func (c *Controller) Prepare() {
 
 func (c *Controller) Finish() {
 
-}
-
-func (c *Controller) Destructor() {
-	if c.CruSession != nil {
-		c.CruSession.SessionRelease()
-	}
 }
 
 func (c *Controller) Get() {
@@ -122,7 +125,7 @@ func (c *Controller) RenderBytes() ([]byte, error) {
 	//if the controller has set layout, then first get the tplname's content set the content to the layout
 	if c.Layout != "" {
 		if c.TplNames == "" {
-			c.TplNames = c.ChildName + "/" + strings.ToLower(c.Ctx.Request.Method) + "." + c.TplExt
+			c.TplNames = strings.ToLower(c.controllerName) + "/" + strings.ToLower(c.actionName) + "." + c.TplExt
 		}
 		if RunMode == "dev" {
 			BuildTemplate(ViewsPath)
@@ -135,6 +138,7 @@ func (c *Controller) RenderBytes() ([]byte, error) {
 		err := BeeTemplates[c.TplNames].ExecuteTemplate(newbytes, c.TplNames, c.Data)
 		if err != nil {
 			Trace("template Execute err:", err)
+			return nil, err
 		}
 		tplcontent, _ := ioutil.ReadAll(newbytes)
 		c.Data["LayoutContent"] = template.HTML(string(tplcontent))
@@ -142,12 +146,13 @@ func (c *Controller) RenderBytes() ([]byte, error) {
 		err = BeeTemplates[c.Layout].ExecuteTemplate(ibytes, c.Layout, c.Data)
 		if err != nil {
 			Trace("template Execute err:", err)
+			return nil, err
 		}
 		icontent, _ := ioutil.ReadAll(ibytes)
 		return icontent, nil
 	} else {
 		if c.TplNames == "" {
-			c.TplNames = c.ChildName + "/" + strings.ToLower(c.Ctx.Request.Method) + "." + c.TplExt
+			c.TplNames = strings.ToLower(c.controllerName) + "/" + strings.ToLower(c.actionName) + "." + c.TplExt
 		}
 		if RunMode == "dev" {
 			BuildTemplate(ViewsPath)
@@ -160,6 +165,7 @@ func (c *Controller) RenderBytes() ([]byte, error) {
 		err := BeeTemplates[c.TplNames].ExecuteTemplate(ibytes, c.TplNames, c.Data)
 		if err != nil {
 			Trace("template Execute err:", err)
+			return nil, err
 		}
 		icontent, _ := ioutil.ReadAll(ibytes)
 		return icontent, nil
@@ -172,7 +178,27 @@ func (c *Controller) Redirect(url string, code int) {
 }
 
 func (c *Controller) Abort(code string) {
-	panic(code)
+	status, err := strconv.Atoi(code)
+	if err == nil {
+		c.Ctx.Abort(status, code)
+	} else {
+		c.Ctx.Abort(200, code)
+	}
+}
+
+func (c *Controller) StopRun() {
+	panic(USERSTOPRUN)
+}
+
+func (c *Controller) UrlFor(endpoint string, values ...string) string {
+	if len(endpoint) <= 0 {
+		return ""
+	}
+	if endpoint[0] == '.' {
+		return UrlFor(reflect.Indirect(reflect.ValueOf(c.AppController)).Type().Name()+endpoint, values...)
+	} else {
+		return UrlFor(endpoint, values...)
+	}
 }
 
 func (c *Controller) ServeJson(encoding ...bool) {
@@ -298,6 +324,11 @@ func (c *Controller) DelSession(name interface{}) {
 	c.CruSession.Delete(name)
 }
 
+func (c *Controller) SessionRegenerateID() {
+	c.CruSession = GlobalSessions.SessionRegenerateId(c.Ctx.ResponseWriter, c.Ctx.Request)
+	c.Ctx.Input.CruSession = c.CruSession
+}
+
 func (c *Controller) DestroySession() {
 	GlobalSessions.SessionDestroy(c.Ctx.ResponseWriter, c.Ctx.Request)
 }
@@ -352,7 +383,7 @@ func (c *Controller) XsrfToken() string {
 			} else {
 				expire = int64(XSRFExpire)
 			}
-			token = GetRandomString(15)
+			token = getRandomString(15)
 			c.SetSecureCookie(XSRFKEY, "_xsrf", token, expire)
 		}
 		c._xsrf_token = token
@@ -386,4 +417,15 @@ func (c *Controller) GoToFunc(funcname string) {
 		panic("GoToFunc should exported function")
 	}
 	c.gotofunc = funcname
+}
+
+//utils func for controller internal
+func getRandomString(n int) string {
+	const alphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	var bytes = make([]byte, n)
+	rand.Read(bytes)
+	for i, b := range bytes {
+		bytes[i] = alphanum[b%byte(len(alphanum))]
+	}
+	return string(bytes)
 }

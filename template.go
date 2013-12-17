@@ -9,9 +9,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/astaxie/beego/utils"
 )
 
 var (
@@ -34,6 +35,8 @@ func init() {
 	beegoTplFuncMap["htmlquote"] = Htmlquote
 	beegoTplFuncMap["htmlunquote"] = Htmlunquote
 	beegoTplFuncMap["renderform"] = RenderForm
+	beegoTplFuncMap["assets_js"] = AssetsJs
+	beegoTplFuncMap["assets_css"] = AssetsCss
 
 	// go1.2 added template funcs
 	// Comparisons
@@ -43,6 +46,8 @@ func init() {
 	beegoTplFuncMap["le"] = le // <=
 	beegoTplFuncMap["lt"] = lt // <
 	beegoTplFuncMap["ne"] = ne // !=
+
+	beegoTplFuncMap["urlfor"] = UrlFor // !=
 }
 
 // AddFuncMap let user to register a func in the template
@@ -140,7 +145,7 @@ func getTplDeep(root, file, parent string, t *template.Template) (*template.Temp
 	} else {
 		fileabspath = filepath.Join(root, file)
 	}
-	if e, _ := FileExists(fileabspath); !e {
+	if e := utils.FileExists(fileabspath); !e {
 		panic("can't find template file" + file)
 	}
 	data, err := ioutil.ReadFile(fileabspath)
@@ -151,7 +156,7 @@ func getTplDeep(root, file, parent string, t *template.Template) (*template.Temp
 	if err != nil {
 		return nil, [][]string{}, err
 	}
-	reg := regexp.MustCompile("{{[ ]*template[ ]+\"([^\"]+)\"")
+	reg := regexp.MustCompile(TemplateLeft + "[ ]*template[ ]+\"([^\"]+)\"")
 	allsub := reg.FindAllStringSubmatch(string(data), -1)
 	for _, m := range allsub {
 		if len(m) == 2 {
@@ -214,7 +219,7 @@ func _getTemplate(t0 *template.Template, root string, submods [][]string, others
 				if err != nil {
 					continue
 				}
-				reg := regexp.MustCompile("{{[ ]*define[ ]+\"([^\"]+)\"")
+				reg := regexp.MustCompile(TemplateLeft + "[ ]*define[ ]+\"([^\"]+)\"")
 				allsub := reg.FindAllStringSubmatch(string(data), -1)
 				for _, sub := range allsub {
 					if len(sub) == 2 && sub[1] == m[1] {
@@ -234,156 +239,3 @@ func _getTemplate(t0 *template.Template, root string, submods [][]string, others
 	}
 	return
 }
-
-// go1.2 added template funcs. begin
-var (
-	errBadComparisonType = errors.New("invalid type for comparison")
-	errBadComparison     = errors.New("incompatible types for comparison")
-	errNoComparison      = errors.New("missing argument for comparison")
-)
-
-type kind int
-
-const (
-	invalidKind kind = iota
-	boolKind
-	complexKind
-	intKind
-	floatKind
-	integerKind
-	stringKind
-	uintKind
-)
-
-func basicKind(v reflect.Value) (kind, error) {
-	switch v.Kind() {
-	case reflect.Bool:
-		return boolKind, nil
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return intKind, nil
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return uintKind, nil
-	case reflect.Float32, reflect.Float64:
-		return floatKind, nil
-	case reflect.Complex64, reflect.Complex128:
-		return complexKind, nil
-	case reflect.String:
-		return stringKind, nil
-	}
-	return invalidKind, errBadComparisonType
-}
-
-// eq evaluates the comparison a == b || a == c || ...
-func eq(arg1 interface{}, arg2 ...interface{}) (bool, error) {
-	v1 := reflect.ValueOf(arg1)
-	k1, err := basicKind(v1)
-	if err != nil {
-		return false, err
-	}
-	if len(arg2) == 0 {
-		return false, errNoComparison
-	}
-	for _, arg := range arg2 {
-		v2 := reflect.ValueOf(arg)
-		k2, err := basicKind(v2)
-		if err != nil {
-			return false, err
-		}
-		if k1 != k2 {
-			return false, errBadComparison
-		}
-		truth := false
-		switch k1 {
-		case boolKind:
-			truth = v1.Bool() == v2.Bool()
-		case complexKind:
-			truth = v1.Complex() == v2.Complex()
-		case floatKind:
-			truth = v1.Float() == v2.Float()
-		case intKind:
-			truth = v1.Int() == v2.Int()
-		case stringKind:
-			truth = v1.String() == v2.String()
-		case uintKind:
-			truth = v1.Uint() == v2.Uint()
-		default:
-			panic("invalid kind")
-		}
-		if truth {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// ne evaluates the comparison a != b.
-func ne(arg1, arg2 interface{}) (bool, error) {
-	// != is the inverse of ==.
-	equal, err := eq(arg1, arg2)
-	return !equal, err
-}
-
-// lt evaluates the comparison a < b.
-func lt(arg1, arg2 interface{}) (bool, error) {
-	v1 := reflect.ValueOf(arg1)
-	k1, err := basicKind(v1)
-	if err != nil {
-		return false, err
-	}
-	v2 := reflect.ValueOf(arg2)
-	k2, err := basicKind(v2)
-	if err != nil {
-		return false, err
-	}
-	if k1 != k2 {
-		return false, errBadComparison
-	}
-	truth := false
-	switch k1 {
-	case boolKind, complexKind:
-		return false, errBadComparisonType
-	case floatKind:
-		truth = v1.Float() < v2.Float()
-	case intKind:
-		truth = v1.Int() < v2.Int()
-	case stringKind:
-		truth = v1.String() < v2.String()
-	case uintKind:
-		truth = v1.Uint() < v2.Uint()
-	default:
-		panic("invalid kind")
-	}
-	return truth, nil
-}
-
-// le evaluates the comparison <= b.
-func le(arg1, arg2 interface{}) (bool, error) {
-	// <= is < or ==.
-	lessThan, err := lt(arg1, arg2)
-	if lessThan || err != nil {
-		return lessThan, err
-	}
-	return eq(arg1, arg2)
-}
-
-// gt evaluates the comparison a > b.
-func gt(arg1, arg2 interface{}) (bool, error) {
-	// > is the inverse of <=.
-	lessOrEqual, err := le(arg1, arg2)
-	if err != nil {
-		return false, err
-	}
-	return !lessOrEqual, nil
-}
-
-// ge evaluates the comparison a >= b.
-func ge(arg1, arg2 interface{}) (bool, error) {
-	// >= is the inverse of <.
-	lessThan, err := lt(arg1, arg2)
-	if err != nil {
-		return false, err
-	}
-	return !lessThan, nil
-}
-
-// go1.2 added template funcs. end

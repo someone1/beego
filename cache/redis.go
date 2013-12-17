@@ -3,7 +3,8 @@ package cache
 import (
 	"encoding/json"
 	"errors"
-	"github.com/garyburd/redigo/redis"
+
+	"github.com/beego/redigo/redis"
 )
 
 var (

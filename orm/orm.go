@@ -119,8 +119,11 @@ func (o *orm) QueryM2M(md interface{}, name string) QueryM2Mer {
 	mi, ind := o.getMiInd(md)
 	fi := o.getFieldInfo(mi, name)
 
-	if fi.fieldType != RelManyToMany {
-		panic(fmt.Errorf("<Ormer.QueryM2M> name `%s` for model `%s` is not a m2m field", fi.name, mi.fullName))
+	switch {
+	case fi.fieldType == RelManyToMany:
+	case fi.fieldType == RelReverseMany && fi.reverseFieldInfo.mi.isThrough:
+	default:
+		panic(fmt.Errorf("<Ormer.QueryM2M> model `%s` . name `%s` is not a m2m field", fi.name, mi.fullName))
 	}
 
 	return newQueryM2M(md, o, mi, fi, ind)
@@ -271,9 +274,7 @@ func (o *orm) QueryTable(ptrStructOrTableName interface{}) (qs QuerySeter) {
 			qs = newQuerySet(o, mi)
 		}
 	} else {
-		val := reflect.ValueOf(ptrStructOrTableName)
-		ind := reflect.Indirect(val)
-		name = getFullName(ind.Type())
+		name = getFullName(indirectType(reflect.TypeOf(ptrStructOrTableName)))
 		if mi, ok := modelCache.getByFN(name); ok {
 			qs = newQuerySet(o, mi)
 		}

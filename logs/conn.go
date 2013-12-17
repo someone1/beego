@@ -65,6 +65,10 @@ func (c *ConnWriter) WriteMsg(msg string, level int) error {
 	return nil
 }
 
+func (c *ConnWriter) Flush() {
+
+}
+
 func (c *ConnWriter) Destroy() {
 	if c.innerWriter == nil {
 		return
@@ -83,8 +87,7 @@ func (c *ConnWriter) connect() error {
 		return err
 	}
 
-	tcpConn, ok := conn.(*net.TCPConn)
-	if ok {
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
 		tcpConn.SetKeepAlive(true)
 	}
 

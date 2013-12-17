@@ -1,14 +1,15 @@
 package beego
 
 import (
-	"github.com/astaxie/beego/middleware"
-	"github.com/astaxie/beego/session"
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/astaxie/beego/middleware"
+	"github.com/astaxie/beego/session"
 )
 
-const VERSION = "0.9.9"
+const VERSION = "1.0.0 RC1"
 
 func Router(rootpath string, c ControllerInterface, mappingMethods ...string) *App {
 	BeeApp.Router(rootpath, c, mappingMethods...)
@@ -49,6 +50,7 @@ func DelStaticPath(url string) *App {
 	return BeeApp
 }
 
+//!!DEPRECATED!! use InsertFilter
 //action has four values:
 //BeforRouter
 //AfterStatic
@@ -59,16 +61,23 @@ func AddFilter(pattern, action string, filter FilterFunc) *App {
 	return BeeApp
 }
 
+func InsertFilter(pattern string, pos int, filter FilterFunc) *App {
+	BeeApp.InsertFilter(pattern, pos, filter)
+	return BeeApp
+}
+
 func Run() {
-	//if AppConfigPath not In the conf/app.conf reParse config
+	// if AppConfigPath not In the conf/app.conf reParse config
 	if AppConfigPath != path.Join(AppPath, "conf", "app.conf") {
 		err := ParseConfig()
 		if err != nil {
-			if RunMode == "dev" {
-				Warn(err)
-			}
+			// configuration is critical to app, panic here if parse failed
+			panic(err)
 		}
 	}
+
+	//init mime
+	initMime()
 
 	if SessionOn {
 		GlobalSessions, _ = session.NewManager(SessionProvider,
@@ -92,6 +101,10 @@ func Run() {
 	middleware.VERSION = VERSION
 	middleware.AppName = AppName
 	middleware.RegisterErrorHander()
+
+	if EnableAdmin {
+		go BeeAdminApp.Run()
+	}
 
 	BeeApp.Run()
 }

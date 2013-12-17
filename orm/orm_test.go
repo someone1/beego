@@ -146,6 +146,7 @@ func TestSyncDb(t *testing.T) {
 	RegisterModel(new(Tag))
 	RegisterModel(new(Comment))
 	RegisterModel(new(UserBig))
+	RegisterModel(new(PostTags))
 
 	err := RunSyncdb("default", true, false)
 	throwFail(t, err)
@@ -161,6 +162,7 @@ func TestRegisterModels(t *testing.T) {
 	RegisterModel(new(Tag))
 	RegisterModel(new(Comment))
 	RegisterModel(new(UserBig))
+	RegisterModel(new(PostTags))
 
 	BootStrap()
 
@@ -470,9 +472,32 @@ The program—and web server—godoc processes Go source files to extract docume
 	}
 }
 
+func TestCustomField(t *testing.T) {
+	user := User{Id: 2}
+	err := dORM.Read(&user)
+	throwFailNow(t, err)
+
+	user.Langs = append(user.Langs, "zh-CN", "en-US")
+	user.Extra.Name = "beego"
+	user.Extra.Data = "orm"
+	_, err = dORM.Update(&user, "Langs", "Extra")
+	throwFailNow(t, err)
+
+	user = User{Id: 2}
+	err = dORM.Read(&user)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(len(user.Langs), 2))
+	throwFailNow(t, AssertIs(user.Langs[0], "zh-CN"))
+	throwFailNow(t, AssertIs(user.Langs[1], "en-US"))
+
+	throwFailNow(t, AssertIs(user.Extra.Name, "beego"))
+	throwFailNow(t, AssertIs(user.Extra.Data, "orm"))
+}
+
 func TestExpr(t *testing.T) {
 	user := &User{}
 	qs := dORM.QueryTable(user)
+	qs = dORM.QueryTable((*User)(nil))
 	qs = dORM.QueryTable("User")
 	qs = dORM.QueryTable("user")
 	num, err := qs.Filter("UserName", "slene").Filter("user_name", "slene").Filter("profile__Age", 28).Count()
@@ -483,9 +508,9 @@ func TestExpr(t *testing.T) {
 	throwFail(t, err)
 	throwFail(t, AssertIs(num, 3))
 
-	num, err = qs.Filter("created", time.Now().Format(format_Date)).Count()
-	throwFail(t, err)
-	throwFail(t, AssertIs(num, 3))
+	// num, err = qs.Filter("created", time.Now().Format(format_Date)).Count()
+	// throwFail(t, err)
+	// throwFail(t, AssertIs(num, 3))
 }
 
 func TestOperators(t *testing.T) {
@@ -696,8 +721,13 @@ func TestAll(t *testing.T) {
 
 	qs = dORM.QueryTable("user")
 	num, err = qs.Filter("user_name", "nothing").All(&users)
-	throwFail(t, err)
-	throwFail(t, AssertIs(num, 0))
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 0))
+
+	var users3 []*User
+	qs = dORM.QueryTable("user")
+	num, err = qs.Filter("user_name", "nothing").All(&users3)
+	throwFailNow(t, AssertIs(users3 == nil, false))
 }
 
 func TestOne(t *testing.T) {
@@ -720,7 +750,7 @@ func TestValues(t *testing.T) {
 	var maps []Params
 	qs := dORM.QueryTable("user")
 
-	num, err := qs.Values(&maps)
+	num, err := qs.OrderBy("Id").Values(&maps)
 	throwFail(t, err)
 	throwFail(t, AssertIs(num, 3))
 	if num == 3 {
@@ -728,7 +758,7 @@ func TestValues(t *testing.T) {
 		throwFail(t, AssertIs(maps[2]["Profile"], nil))
 	}
 
-	num, err = qs.Values(&maps, "UserName", "Profile__Age")
+	num, err = qs.OrderBy("Id").Values(&maps, "UserName", "Profile__Age")
 	throwFail(t, err)
 	throwFail(t, AssertIs(num, 3))
 	if num == 3 {
@@ -742,7 +772,7 @@ func TestValuesList(t *testing.T) {
 	var list []ParamsList
 	qs := dORM.QueryTable("user")
 
-	num, err := qs.ValuesList(&list)
+	num, err := qs.OrderBy("Id").ValuesList(&list)
 	throwFail(t, err)
 	throwFail(t, AssertIs(num, 3))
 	if num == 3 {
@@ -750,7 +780,7 @@ func TestValuesList(t *testing.T) {
 		throwFail(t, AssertIs(list[2][9], nil))
 	}
 
-	num, err = qs.ValuesList(&list, "UserName", "Profile__Age")
+	num, err = qs.OrderBy("Id").ValuesList(&list, "UserName", "Profile__Age")
 	throwFail(t, err)
 	throwFail(t, AssertIs(num, 3))
 	if num == 3 {
@@ -1093,6 +1123,75 @@ func TestQueryM2M(t *testing.T) {
 	num, err = m2m.Count()
 	throwFailNow(t, err)
 	throwFailNow(t, AssertIs(num, 0))
+
+	tag := Tag{Name: "test"}
+	_, err = dORM.Insert(&tag)
+	throwFailNow(t, err)
+
+	m2m = dORM.QueryM2M(&tag, "Posts")
+
+	post1 := []*Post{&Post{Title: "TestPost1"}, &Post{Title: "TestPost2"}}
+	post2 := &Post{Title: "TestPost3"}
+	post3 := []interface{}{&Post{Title: "TestPost4"}}
+
+	posts := []interface{}{post1[0], post1[1], post2, post3[0]}
+
+	for _, post := range posts {
+		p := post.(*Post)
+		p.User = &User{Id: 1}
+		_, err := dORM.Insert(post)
+		throwFailNow(t, err)
+	}
+
+	num, err = m2m.Add(post1)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 2))
+
+	num, err = m2m.Add(post2)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 1))
+
+	num, err = m2m.Add(post3)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 1))
+
+	num, err = m2m.Count()
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 4))
+
+	num, err = m2m.Remove(post3)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 1))
+
+	num, err = m2m.Count()
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 3))
+
+	exist = m2m.Exist(post2)
+	throwFailNow(t, AssertIs(exist, true))
+
+	num, err = m2m.Remove(post2)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 1))
+
+	exist = m2m.Exist(post2)
+	throwFailNow(t, AssertIs(exist, false))
+
+	num, err = m2m.Count()
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 2))
+
+	num, err = m2m.Clear()
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 2))
+
+	num, err = m2m.Count()
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 0))
+
+	num, err = dORM.Delete(&tag)
+	throwFailNow(t, err)
+	throwFailNow(t, AssertIs(num, 1))
 }
 
 func TestQueryRelate(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"mime"
 	"net/http"
@@ -63,8 +64,6 @@ func (output *BeegoOutput) Body(content []byte) {
 		output_writer.(*gzip.Writer).Close()
 	case *flate.Writer:
 		output_writer.(*flate.Writer).Close()
-	case io.WriteCloser:
-		output_writer.(io.WriteCloser).Close()
 	}
 }
 
@@ -157,7 +156,7 @@ func (output *BeegoOutput) Jsonp(data interface{}, hasIndent bool) error {
 	if callback == "" {
 		return errors.New(`"callback" parameter required`)
 	}
-	callback_content := bytes.NewBufferString(callback)
+	callback_content := bytes.NewBufferString(" " + template.JSEscapeString(callback))
 	callback_content.WriteString("(")
 	callback_content.Write(content)
 	callback_content.WriteString(");\r\n")
@@ -256,4 +255,8 @@ func stringsToJson(str string) string {
 		}
 	}
 	return jsons
+}
+
+func (output *BeegoOutput) Session(name interface{}, value interface{}) {
+	output.Context.Input.CruSession.Set(name, value)
 }

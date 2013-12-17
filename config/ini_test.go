@@ -6,6 +6,8 @@ import (
 )
 
 var inicontext = `
+;comment one
+#comment two
 appname = beeapi
 httpport = 8080
 mysqlport = 3600
@@ -13,6 +15,10 @@ PI = 3.1415976
 runmode = "dev"
 autorender = false
 copyrequestbody = true
+[demo]
+key1="asta"
+key2 = "xie"
+CaseInsensitive = true
 `
 
 func TestIni(t *testing.T) {
@@ -62,5 +68,14 @@ func TestIni(t *testing.T) {
 	}
 	if iniconf.String("name") != "astaxie" {
 		t.Fatal("get name error")
+	}
+	if iniconf.String("demo::key1") != "asta" {
+		t.Fatal("get demo.key1 error")
+	}
+	if iniconf.String("demo::key2") != "xie" {
+		t.Fatal("get demo.key2 error")
+	}
+	if v, err := iniconf.Bool("demo::caseinsensitive"); err != nil || v != true {
+		t.Fatal("get demo.caseinsensitive error")
 	}
 }

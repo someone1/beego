@@ -2,24 +2,27 @@ package context
 
 import (
 	"bytes"
-	"github.com/astaxie/beego/session"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/astaxie/beego/session"
 )
 
 type BeegoInput struct {
 	CruSession  session.SessionStore
-	Param       map[string]string
+	Params      map[string]string
+	Data        map[interface{}]interface{}
 	req         *http.Request
 	RequestBody []byte
 }
 
 func NewInput(req *http.Request) *BeegoInput {
 	return &BeegoInput{
-		Param: make(map[string]string),
-		req:   req,
+		Params: make(map[string]string),
+		Data:   make(map[interface{}]interface{}),
+		req:    req,
 	}
 }
 
@@ -101,14 +104,14 @@ func (input *BeegoInput) IP() string {
 }
 
 func (input *BeegoInput) Proxy() []string {
-	if ips := input.Header("HTTP_X_FORWARDED_FOR"); ips != "" {
+	if ips := input.Header("X-Forwarded-For"); ips != "" {
 		return strings.Split(ips, ",")
 	}
 	return []string{}
 }
 
 func (input *BeegoInput) Refer() string {
-	return input.Header("HTTP_REFERER")
+	return input.Header("Referer")
 }
 
 func (input *BeegoInput) SubDomains() string {
@@ -126,17 +129,18 @@ func (input *BeegoInput) Port() int {
 }
 
 func (input *BeegoInput) UserAgent() string {
-	return input.Header("HTTP_USER_AGENT")
+	return input.Header("User-Agent")
 }
 
-func (input *BeegoInput) Params(key string) string {
-	if v, ok := input.Param[key]; ok {
+func (input *BeegoInput) Param(key string) string {
+	if v, ok := input.Params[key]; ok {
 		return v
 	}
 	return ""
 }
 
 func (input *BeegoInput) Query(key string) string {
+	input.req.ParseForm()
 	return input.req.Form.Get(key)
 }
 
@@ -163,4 +167,15 @@ func (input *BeegoInput) Body() []byte {
 	input.req.Body = ioutil.NopCloser(bf)
 	input.RequestBody = requestbody
 	return requestbody
+}
+
+func (input *BeegoInput) GetData(key interface{}) interface{} {
+	if v, ok := input.Data[key]; ok {
+		return v
+	}
+	return nil
+}
+
+func (input *BeegoInput) SetData(key, val interface{}) {
+	input.Data[key] = val
 }

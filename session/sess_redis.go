@@ -1,9 +1,11 @@
 package session
 
 import (
-	"github.com/garyburd/redigo/redis"
 	"strconv"
 	"strings"
+	"sync"
+
+	"github.com/beego/redigo/redis"
 )
 
 var redispder = &RedisProvider{}
@@ -13,33 +15,43 @@ var MAX_POOL_SIZE = 100
 var redisPool chan redis.Conn
 
 type RedisSessionStore struct {
-	c   redis.Conn
-	sid string
+	c           redis.Conn
+	sid         string
+	lock        sync.RWMutex
+	values      map[interface{}]interface{}
+	maxlifetime int64
 }
 
 func (rs *RedisSessionStore) Set(key, value interface{}) error {
-	//_, err := rs.c.Do("HSET", rs.sid, key, value)
-	_, err := rs.c.Do("HSET", rs.sid, key, value)
-	return err
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+	rs.values[key] = value
+	return nil
 }
 
 func (rs *RedisSessionStore) Get(key interface{}) interface{} {
-	reply, err := rs.c.Do("HGET", rs.sid, key)
-	if err != nil {
+	rs.lock.RLock()
+	defer rs.lock.RUnlock()
+	if v, ok := rs.values[key]; ok {
+		return v
+	} else {
 		return nil
 	}
-	return reply
+	return nil
 }
 
 func (rs *RedisSessionStore) Delete(key interface{}) error {
-	//_, err := rs.c.Do("HDEL", rs.sid, key)
-	_, err := rs.c.Do("HDEL", rs.sid, key)
-	return err
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+	delete(rs.values, key)
+	return nil
 }
 
 func (rs *RedisSessionStore) Flush() error {
-	_, err := rs.c.Do("DEL", rs.sid)
-	return err
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+	rs.values = make(map[interface{}]interface{})
+	return nil
 }
 
 func (rs *RedisSessionStore) SessionID() string {
@@ -47,7 +59,15 @@ func (rs *RedisSessionStore) SessionID() string {
 }
 
 func (rs *RedisSessionStore) SessionRelease() {
-	rs.c.Close()
+	defer rs.c.Close()
+	if len(rs.values) > 0 {
+		b, err := encodeGob(rs.values)
+		if err != nil {
+			return
+		}
+		rs.c.Do("SET", rs.sid, string(b))
+		rs.c.Do("EXPIRE", rs.sid, rs.maxlifetime)
+	}
 }
 
 type RedisProvider struct {
@@ -97,29 +117,58 @@ func (rp *RedisProvider) SessionInit(maxlifetime int64, savePath string) error {
 
 func (rp *RedisProvider) SessionRead(sid string) (SessionStore, error) {
 	c := rp.poollist.Get()
-	//if str, err := redis.String(c.Do("GET", sid)); err != nil || str == "" {
-	if str, err := redis.String(c.Do("HGET", sid, sid)); err != nil || str == "" {
-		//c.Do("SET", sid, sid, rp.maxlifetime)
-		c.Do("HSET", sid, sid, rp.maxlifetime)
+	if existed, err := redis.Int(c.Do("EXISTS", sid)); err != nil || existed == 0 {
+		c.Do("SET", sid)
 	}
 	c.Do("EXPIRE", sid, rp.maxlifetime)
-	rs := &RedisSessionStore{c: c, sid: sid}
+	kvs, err := redis.String(c.Do("GET", sid))
+	var kv map[interface{}]interface{}
+	if len(kvs) == 0 {
+		kv = make(map[interface{}]interface{})
+	} else {
+		kv, err = decodeGob([]byte(kvs))
+		if err != nil {
+			return nil, err
+		}
+	}
+	rs := &RedisSessionStore{c: c, sid: sid, values: kv, maxlifetime: rp.maxlifetime}
 	return rs, nil
+}
+
+func (rp *RedisProvider) SessionExist(sid string) bool {
+	c := rp.poollist.Get()
+	defer c.Close()
+	if existed, err := redis.Int(c.Do("EXISTS", sid)); err != nil || existed == 0 {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (rp *RedisProvider) SessionRegenerate(oldsid, sid string) (SessionStore, error) {
 	c := rp.poollist.Get()
-	if str, err := redis.String(c.Do("HGET", oldsid, oldsid)); err != nil || str == "" {
-		c.Do("HSET", oldsid, oldsid, rp.maxlifetime)
+	if existed, err := redis.Int(c.Do("EXISTS", oldsid)); err != nil || existed == 0 {
+		c.Do("SET", oldsid)
 	}
 	c.Do("RENAME", oldsid, sid)
 	c.Do("EXPIRE", sid, rp.maxlifetime)
-	rs := &RedisSessionStore{c: c, sid: sid}
+	kvs, err := redis.String(c.Do("GET", sid))
+	var kv map[interface{}]interface{}
+	if len(kvs) == 0 {
+		kv = make(map[interface{}]interface{})
+	} else {
+		kv, err = decodeGob([]byte(kvs))
+		if err != nil {
+			return nil, err
+		}
+	}
+	rs := &RedisSessionStore{c: c, sid: sid, values: kv, maxlifetime: rp.maxlifetime}
 	return rs, nil
 }
 
 func (rp *RedisProvider) SessionDestroy(sid string) error {
 	c := rp.poollist.Get()
+	defer c.Close()
 	c.Do("DEL", sid)
 	return nil
 }

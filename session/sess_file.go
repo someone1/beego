@@ -28,7 +28,6 @@ func (fs *FileSessionStore) Set(key, value interface{}) error {
 	fs.lock.Lock()
 	defer fs.lock.Unlock()
 	fs.values[key] = value
-	fs.updatecontent()
 	return nil
 }
 
@@ -47,7 +46,6 @@ func (fs *FileSessionStore) Delete(key interface{}) error {
 	fs.lock.Lock()
 	defer fs.lock.Unlock()
 	delete(fs.values, key)
-	fs.updatecontent()
 	return nil
 }
 
@@ -55,7 +53,6 @@ func (fs *FileSessionStore) Flush() error {
 	fs.lock.Lock()
 	defer fs.lock.Unlock()
 	fs.values = make(map[interface{}]interface{})
-	fs.updatecontent()
 	return nil
 }
 
@@ -64,10 +61,7 @@ func (fs *FileSessionStore) SessionID() string {
 }
 
 func (fs *FileSessionStore) SessionRelease() {
-	fs.f.Close()
-}
-
-func (fs *FileSessionStore) updatecontent() {
+	defer fs.f.Close()
 	b, err := encodeGob(fs.values)
 	if err != nil {
 		return
@@ -120,6 +114,15 @@ func (fp *FileProvider) SessionRead(sid string) (SessionStore, error) {
 	f, err = os.OpenFile(path.Join(fp.savePath, string(sid[0]), string(sid[1]), sid), os.O_WRONLY|os.O_CREATE, 0777)
 	ss := &FileSessionStore{f: f, sid: sid, values: kv}
 	return ss, nil
+}
+
+func (fp *FileProvider) SessionExist(sid string) bool {
+	_, err := os.Stat(path.Join(fp.savePath, string(sid[0]), string(sid[1]), sid))
+	if err == nil {
+		return true
+	} else {
+		return false
+	}
 }
 
 func (fp *FileProvider) SessionDestroy(sid string) error {
