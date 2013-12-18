@@ -1,3 +1,5 @@
+// +build !appengine
+
 // Zero-downtime restarts in Go.
 package beego
 
