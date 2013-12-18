@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"os"
 	"path"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -64,8 +63,8 @@ func init() {
 	BeeApp = NewApp()
 
 	// initialize default configurations
-	os.Chdir(path.Dir(os.Args[0]))
 	AppPath = path.Dir(os.Args[0])
+	init_platform()
 
 	StaticDir = make(map[string]string)
 	StaticDir["/static"] = "static"
@@ -86,7 +85,7 @@ func init() {
 
 	RecoverPanic = true
 
-	ViewsPath = "views"
+	ViewsPath = path.Join(AppPath, "views")
 
 	SessionOn = false
 	SessionProvider = "memory"
@@ -120,8 +119,6 @@ func init() {
 	EnableAdmin = false
 	AdminHttpAddr = "127.0.0.1"
 	AdminHttpPort = 8088
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	err := ParseConfig()
 	if err != nil && !os.IsNotExist(err) {
