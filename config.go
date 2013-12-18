@@ -63,7 +63,6 @@ func init() {
 	BeeApp = NewApp()
 
 	// initialize default configurations
-	AppPath = path.Dir(os.Args[0])
 	init_platform()
 
 	StaticDir = make(map[string]string)
