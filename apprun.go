@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Run beego application.
 func (app *App) Run() {
 	addr := HttpAddr
 
@@ -45,7 +46,7 @@ func (app *App) Run() {
 			if nil != err {
 				BeeLogger.Critical("ResolveTCPAddr:", err)
 			}
-			l, err = GetInitListner(laddr)
+			l, err = GetInitListener(laddr)
 			theStoppable = newStoppable(l)
 			err = server.Serve(theStoppable)
 			theStoppable.wg.Wait()
