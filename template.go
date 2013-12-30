@@ -17,8 +17,9 @@ import (
 
 var (
 	beegoTplFuncMap template.FuncMap
-	BeeTemplates    map[string]*template.Template
-	BeeTemplateExt  []string
+	// beego template caching map and supported template file extensions.
+	BeeTemplates   map[string]*template.Template
+	BeeTemplateExt []string
 )
 
 func init() {
@@ -50,7 +51,7 @@ func init() {
 	beegoTplFuncMap["urlfor"] = UrlFor // !=
 }
 
-// AddFuncMap let user to register a func in the template
+// AddFuncMap let user to register a func in the template.
 func AddFuncMap(key string, funname interface{}) error {
 	beegoTplFuncMap[key] = funname
 	return nil
@@ -68,7 +69,7 @@ func (self *templatefile) visit(paths string, f os.FileInfo, err error) error {
 	if f.IsDir() || (f.Mode()&os.ModeSymlink) > 0 {
 		return nil
 	}
-	if !HasTemplateEXt(paths) {
+	if !HasTemplateExt(paths) {
 		return nil
 	}
 
@@ -88,7 +89,8 @@ func (self *templatefile) visit(paths string, f os.FileInfo, err error) error {
 	return nil
 }
 
-func HasTemplateEXt(paths string) bool {
+// return this path contains supported template extension of beego or not.
+func HasTemplateExt(paths string) bool {
 	for _, v := range BeeTemplateExt {
 		if strings.HasSuffix(paths, "."+v) {
 			return true
@@ -97,6 +99,7 @@ func HasTemplateEXt(paths string) bool {
 	return false
 }
 
+// add new extension for template.
 func AddTemplateExt(ext string) {
 	for _, v := range BeeTemplateExt {
 		if v == ext {
@@ -106,6 +109,8 @@ func AddTemplateExt(ext string) {
 	BeeTemplateExt = append(BeeTemplateExt, ext)
 }
 
+// build all template files in a directory.
+// it makes beego can render any template file in view directory.
 func BuildTemplate(dir string) error {
 	if _, err := os.Stat(dir); err != nil {
 		if os.IsNotExist(err) {
@@ -164,7 +169,7 @@ func getTplDeep(root, file, parent string, t *template.Template) (*template.Temp
 			if tlook != nil {
 				continue
 			}
-			if !HasTemplateEXt(m[1]) {
+			if !HasTemplateExt(m[1]) {
 				continue
 			}
 			t, _, err = getTplDeep(root, m[1], file, t)

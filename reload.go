@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	// An environment variable when restarting application http listener.
 	FDKey = "BEEGO_HOT_FD"
 )
 
@@ -34,6 +35,7 @@ type conn struct {
 	lock    sync.Mutex
 }
 
+// Close current processing connection.
 func (c conn) Close() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -69,6 +71,8 @@ func newStoppable(l net.Listener) (sl *stoppableListener) {
 	return
 }
 
+// Set stopped Listener to accept requests again.
+// it returns the accepted and closable connection or error.
 func (sl *stoppableListener) Accept() (c net.Conn, err error) {
 	c, err = sl.Listener.Accept()
 	if err != nil {
@@ -82,6 +86,7 @@ func (sl *stoppableListener) Accept() (c net.Conn, err error) {
 	return
 }
 
+// Listener waits signal to kill or interrupt then restart.
 func WaitSignal(l net.Listener) error {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, os.Kill)
@@ -103,6 +108,7 @@ func WaitSignal(l net.Listener) error {
 	return nil // It'll never get here.
 }
 
+// Kill current running os process.
 func CloseSelf() error {
 	ppid := os.Getpid()
 	if ppid == 1 { // init provided sockets, for example systemd
@@ -142,7 +148,8 @@ func Restart(l net.Listener) error {
 	return nil
 }
 
-func GetInitListner(tcpaddr *net.TCPAddr) (l net.Listener, err error) {
+// Get current net.Listen in running process.
+func GetInitListener(tcpaddr *net.TCPAddr) (l net.Listener, err error) {
 	countStr := os.Getenv(FDKey)
 	if countStr == "" {
 		return net.ListenTCP("tcp", tcpaddr)
