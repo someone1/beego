@@ -4,13 +4,13 @@ package beego
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 )
 
 func init_platform() {
-	os.Chdir(path.Dir(os.Args[0])) //Is this required?
-	AppPath = path.Dir(os.Args[0])
+	AppPath, _ = filepath.Abs(filepath.Dir(os.Args[0]))
+	os.Chdir(AppPath) //Is this required?
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }

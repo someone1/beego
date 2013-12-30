@@ -3,7 +3,6 @@ package beego
 import (
 	"html/template"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -85,7 +84,7 @@ func init() {
 
 	RecoverPanic = true
 
-	ViewsPath = path.Join(AppPath, "views")
+	ViewsPath = filepath.Join(AppPath, "views")
 
 	SessionOn = false
 	SessionProvider = "memory"
