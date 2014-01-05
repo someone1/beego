@@ -3,9 +3,9 @@
 package session
 
 import (
-  "sync"
+	"sync"
 	"time"
-  
+
 	"appengine"
 	"appengine/datastore"
 	"appengine/memcache"
@@ -24,7 +24,7 @@ type AppEngineSessionStore struct {
 }
 
 type BeegoSessionStore struct {
-	SessionData  []byte
+	SessionData  []byte `datastore:",noindex"`
 	SessionStart time.Time
 }
 
@@ -97,7 +97,7 @@ func (st *AppEngineSessionStore) updatestore() {
 		mem_err := memcache.Set(st.c, &memcache.Item{
 			Key:        st.sid,
 			Value:      st.bss_entity.SessionData,
-			Expiration: (time.Duration(st.maxlifetime) * time.Second) - time.Since(st.bss_entity.SessionStart),
+			Expiration: (time.Duration(st.maxlifetime) * time.Second),
 		})
 		if mem_err != nil {
 			st.c.Errorf("error saving session data to memcache: %v", mem_err)
@@ -129,14 +129,12 @@ func (mp *AppEngineProvider) SessionInit(maxlifetime int64, savePath string) err
 func (mp *AppEngineProvider) getsession(sid string, c appengine.Context) *BeegoSessionStore {
 	in_cache := false
 	e := new(BeegoSessionStore)
-	if item, err := memcache.Get(c, sid); err == memcache.ErrCacheMiss {
-		//This is ok!
-	} else if err != nil {
-		c.Errorf("error getting session data from memcache: %v", err)
-	} else {
+	if item, err := memcache.Get(c, sid); err == nil {
 		in_cache = true
 		e.SessionData = item.Value
-		e.SessionStart = time.Now().Add(-(time.Duration(mp.maxlifetime) * time.Second) - item.Expiration)
+		e.SessionStart = time.Now().Add(-((time.Duration(mp.maxlifetime) * time.Second) - item.Expiration))
+	} else if err != memcache.ErrCacheMiss {
+		c.Errorf("error getting session data from memcache: %v", err)
 	}
 
 	if !in_cache {
@@ -153,14 +151,15 @@ func (mp *AppEngineProvider) getsession(sid string, c appengine.Context) *BeegoS
 
 func (mp *AppEngineProvider) SessionExist(sid string, c appengine.Context) bool {
 	k := datastore.NewKey(c, "BeegoSessionStore", sid, 0, nil)
-  e := new(BeegoSessionStore)
+	e := new(BeegoSessionStore)
 	if ds_err := datastore.Get(c, k, e); ds_err == datastore.ErrNoSuchEntity {
 		return false
 	} else if ds_err != nil {
 		c.Errorf("error while checking existence of session data from datastore: %v", ds_err)
 		return false
 	} else {
-		return true
+		// Don't depend on GC to clean expired sessions
+		return (time.Duration(mp.maxlifetime) * time.Second) > time.Since(e.SessionStart)
 	}
 }
 
@@ -169,11 +168,11 @@ func (mp *AppEngineProvider) SessionRead(sid string, c appengine.Context) (Sessi
 	var kv = make(map[interface{}]interface{})
 
 	if len(e.SessionData) != 0 {
-    decoded_gob, err := decodeGob(e.SessionData)
+		decoded_gob, err := decodeGob(e.SessionData)
 		if err != nil {
 			return nil, err
 		}
-    kv = decoded_gob
+		kv = decoded_gob
 	}
 	rs := &AppEngineSessionStore{c: c, sid: sid, values: kv, maxlifetime: mp.maxlifetime, dirty: false, bss_entity: e}
 	return rs, nil
@@ -184,19 +183,19 @@ func (mp *AppEngineProvider) SessionRegenerate(oldsid, sid string, c appengine.C
 	var kv = make(map[interface{}]interface{})
 
 	if len(e.SessionData) != 0 {
-    decoded_gob, err := decodeGob(e.SessionData)
+		decoded_gob, err := decodeGob(e.SessionData)
 		if err != nil {
 			return nil, err
 		}
-    kv = decoded_gob
+		kv = decoded_gob
 	}
 	rs := &AppEngineSessionStore{c: c, sid: sid, values: kv, maxlifetime: mp.maxlifetime, dirty: false, bss_entity: e}
 	return rs, nil
 }
 
 func (mp *AppEngineProvider) SessionDestroy(sid string, c appengine.Context) error {
-  done := make(chan bool, 2)
-  
+	done := make(chan bool, 2)
+
 	go func() {
 		k := datastore.NewKey(c, "BeegoSessionStore", sid, 0, nil)
 		if ds_err := datastore.Delete(c, k); ds_err != nil {
@@ -213,7 +212,7 @@ func (mp *AppEngineProvider) SessionDestroy(sid string, c appengine.Context) err
 		done <- true
 	}()
 
-  _, _ = <-done, <-done
+	_, _ = <-done, <-done
 	return nil
 }
 
@@ -232,15 +231,15 @@ func (mp *AppEngineProvider) SessionGC(c appengine.Context) {
 }
 
 func (mp *AppEngineProvider) SessionAll() int {
-  // Unable to Implement given Sessions API
-  return 0
-  /*
-	total, err := datastore.NewQuery("BeegoSessionStore").KeysOnly().Count(c)
-	if err != nil {
-		return 0
-	}
-	return total
-  */
+	// Unable to Implement given Sessions API
+	return 0
+	/*
+		total, err := datastore.NewQuery("BeegoSessionStore").KeysOnly().Count(c)
+		if err != nil {
+			return 0
+		}
+		return total
+	*/
 }
 
 func init() {
