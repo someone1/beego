@@ -11,6 +11,7 @@ package session
 
 import (
 	"database/sql"
+	"net/http"
 	"sync"
 	"time"
 
@@ -62,7 +63,7 @@ func (st *MysqlSessionStore) SessionID() string {
 	return st.sid
 }
 
-func (st *MysqlSessionStore) SessionRelease() {
+func (st *MysqlSessionStore) SessionRelease(w http.ResponseWriter) {
 	defer st.c.Close()
 	if len(st.values) > 0 {
 		b, err := encodeGob(st.values)

@@ -3,15 +3,16 @@
 package session
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
-  "time"
+	"time"
 
 	"appengine"
 )
 
 type Provider interface {
-	SessionInit(maxlifetime int64, savePath string) error
+	SessionInit(gclifetime int64, config string) error
 	SessionRead(sid string, c appengine.Context) (SessionStore, error)
 	SessionExist(sid string, c appengine.Context) bool
 	SessionRegenerate(oldsid, sid string, c appengine.Context) (SessionStore, error)
@@ -22,30 +23,34 @@ type Provider interface {
 
 //Destroy sessionid
 func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
-  var c = appengine.NewContext(r)
-	cookie, err := r.Cookie(manager.cookieName)
+	var c = appengine.NewContext(r)
+	cookie, err := r.Cookie(manager.config.CookieName)
 	if err != nil || cookie.Value == "" {
 		return
 	} else {
 		manager.provider.SessionDestroy(cookie.Value, c)
 		expiration := time.Now()
-		cookie := http.Cookie{Name: manager.cookieName, Path: "/", HttpOnly: true, Expires: expiration, MaxAge: -1}
+		cookie := http.Cookie{Name: manager.config.CookieName,
+			Path:     "/",
+			HttpOnly: true,
+			Expires:  expiration,
+			MaxAge:   -1}
 		http.SetCookie(w, &cookie)
 	}
 }
 
 func (manager *Manager) SessionRegenerateId(w http.ResponseWriter, r *http.Request) (session SessionStore) {
-  var c = appengine.NewContext(r)
+	var c = appengine.NewContext(r)
 	sid := manager.sessionId(r)
-	cookie, err := r.Cookie(manager.cookieName)
+	cookie, err := r.Cookie(manager.config.CookieName)
 	if err != nil && cookie.Value == "" {
 		//delete old cookie
 		session, _ = manager.provider.SessionRead(sid, c)
-		cookie = &http.Cookie{Name: manager.cookieName,
+		cookie = &http.Cookie{Name: manager.config.CookieName,
 			Value:    url.QueryEscape(sid),
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   manager.secure,
+			Secure:   manager.config.Secure,
 		}
 	} else {
 		oldsid, _ := url.QueryUnescape(cookie.Value)
@@ -54,31 +59,32 @@ func (manager *Manager) SessionRegenerateId(w http.ResponseWriter, r *http.Reque
 		cookie.HttpOnly = true
 		cookie.Path = "/"
 	}
-	if manager.maxage >= 0 {
-		cookie.MaxAge = manager.maxage
+	if manager.config.Maxage >= 0 {
+		cookie.MaxAge = manager.config.Maxage
 	}
 	http.SetCookie(w, cookie)
 	r.AddCookie(cookie)
 	return
 }
 
-
 //get Session
 func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (session SessionStore) {
 	var c = appengine.NewContext(r)
-	cookie, err := r.Cookie(manager.cookieName)
+	cookie, err := r.Cookie(manager.config.CookieName)
 	if err != nil || cookie.Value == "" {
 		sid := manager.sessionId(r)
 		session, _ = manager.provider.SessionRead(sid, c)
-		cookie = &http.Cookie{Name: manager.cookieName,
+		cookie = &http.Cookie{Name: manager.config.CookieName,
 			Value:    url.QueryEscape(sid),
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   manager.secure}
-		if manager.maxage >= 0 {
-			cookie.MaxAge = manager.maxage
+			Secure:   manager.config.Secure}
+		if manager.config.Maxage >= 0 {
+			cookie.MaxAge = manager.config.Maxage
 		}
-		http.SetCookie(w, cookie)
+		if manager.config.EnableSetCookie {
+			http.SetCookie(w, cookie)
+		}
 		r.AddCookie(cookie)
 	} else {
 		sid, _ := url.QueryUnescape(cookie.Value)
@@ -87,19 +93,26 @@ func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (se
 		} else {
 			sid = manager.sessionId(r)
 			session, _ = manager.provider.SessionRead(sid, c)
-			cookie = &http.Cookie{Name: manager.cookieName,
+			cookie = &http.Cookie{Name: manager.config.CookieName,
 				Value:    url.QueryEscape(sid),
 				Path:     "/",
 				HttpOnly: true,
-				Secure:   manager.secure}
-			if manager.maxage >= 0 {
-				cookie.MaxAge = manager.maxage
+				Secure:   manager.config.Secure}
+			if manager.config.Maxage >= 0 {
+				cookie.MaxAge = manager.config.Maxage
 			}
-			http.SetCookie(w, cookie)
+			if manager.config.EnableSetCookie {
+				http.SetCookie(w, cookie)
+			}
 			r.AddCookie(cookie)
 		}
 	}
 	return
+}
+
+// What's the point of this?
+func (manager *Manager) GetProvider(sid string) (sessions SessionStore, err error) {
+	return nil, errors.New("GetProvider not implemented for appengine session provider")
 }
 
 func (manager *Manager) GC() {

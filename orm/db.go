@@ -461,6 +461,8 @@ func (d *dbBase) deleteRels(q dbQuerier, mi *modelInfo, args []interface{}, tz *
 
 func (d *dbBase) DeleteBatch(q dbQuerier, qs *querySet, mi *modelInfo, cond *Condition, tz *time.Location) (int64, error) {
 	tables := newDbTables(mi, d.ins)
+	tables.skipEnd = true
+
 	if qs != nil {
 		tables.parseRelated(qs.related, qs.relDepth)
 	}
@@ -485,6 +487,8 @@ func (d *dbBase) DeleteBatch(q dbQuerier, qs *querySet, mi *modelInfo, cond *Con
 	} else {
 		rs = r
 	}
+
+	defer rs.Close()
 
 	var ref interface{}
 
@@ -639,6 +643,8 @@ func (d *dbBase) ReadBatch(q dbQuerier, qs *querySet, mi *modelInfo, cond *Condi
 		var ref interface{}
 		refs[i] = &ref
 	}
+
+	defer rs.Close()
 
 	slice := ind
 
@@ -1150,6 +1156,8 @@ func (d *dbBase) ReadValues(q dbQuerier, qs *querySet, mi *modelInfo, cond *Cond
 		refs[i] = &ref
 	}
 
+	defer rs.Close()
+
 	var (
 		cnt     int64
 		columns []string
@@ -1268,6 +1276,8 @@ func (d *dbBase) GetTables(db dbQuerier) (map[string]bool, error) {
 		return tables, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		var table string
 		err := rows.Scan(&table)
@@ -1289,6 +1299,8 @@ func (d *dbBase) GetColumns(db dbQuerier, table string) (map[string][3]string, e
 	if err != nil {
 		return columns, err
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var (

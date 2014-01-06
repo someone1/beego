@@ -3,6 +3,7 @@
 package session
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
@@ -108,21 +109,20 @@ func (st *AppEngineSessionStore) updatestore() {
 	_, _ = <-done, <-done
 }
 
-func (st *AppEngineSessionStore) SessionRelease() {
+// SessionRelease will update the data of a session and reset its
+// expiration time
+func (st *AppEngineSessionStore) SessionRelease(w http.ResponseWriter) {
 	//Always expected to be called to save session data
-	if st.dirty {
-		st.updatestore()
-	}
+	st.bss_entity.SessionStart = time.Now()
+	st.updatestore()
 }
 
 type AppEngineProvider struct {
 	maxlifetime int64
-	savePath    string
 }
 
-func (mp *AppEngineProvider) SessionInit(maxlifetime int64, savePath string) error {
-	mp.maxlifetime = maxlifetime
-	mp.savePath = savePath
+func (mp *AppEngineProvider) SessionInit(gclifetime int64, config string) error {
+	mp.maxlifetime = gclifetime
 	return nil
 }
 
@@ -132,18 +132,18 @@ func (mp *AppEngineProvider) getsession(sid string, c appengine.Context) *BeegoS
 	if item, err := memcache.Get(c, sid); err == nil {
 		in_cache = true
 		e.SessionData = item.Value
-		e.SessionStart = time.Now().Add(-((time.Duration(mp.maxlifetime) * time.Second) - item.Expiration))
+		e.SessionStart = time.Now() // Do we care about accuracy here?
 	} else if err != memcache.ErrCacheMiss {
 		c.Errorf("error getting session data from memcache: %v", err)
 	}
 
 	if !in_cache {
 		k := datastore.NewKey(c, "BeegoSessionStore", sid, 0, nil)
-		if ds_err := datastore.Get(c, k, e); ds_err == datastore.ErrNoSuchEntity {
+		if ds_err := datastore.Get(c, k, e); ds_err != nil {
 			e.SessionStart = time.Now()
-		} else if ds_err != nil {
-			c.Errorf("error getting session data from datastore: %v", ds_err)
-			e.SessionStart = time.Now()
+			if ds_err != datastore.ErrNoSuchEntity {
+				c.Errorf("error getting session data from datastore: %v", ds_err)
+			}
 		}
 	}
 	return e
