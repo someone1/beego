@@ -137,6 +137,7 @@ func init() {
 func ParseConfig() (err error) {
 	AppConfig, err = config.NewConfig("ini", AppConfigPath)
 	if err != nil {
+		AppConfig = config.NewFakeConfig()
 		return err
 	} else {
 		HttpAddr = AppConfig.String("HttpAddr")
