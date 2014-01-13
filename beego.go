@@ -1,4 +1,4 @@
-package beego
+package beegae
 
 import (
 	"net/http"
@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/astaxie/beegae/session"
 	"github.com/astaxie/beego/middleware"
-	"github.com/astaxie/beego/session"
 )
 
 // beego web framework version.

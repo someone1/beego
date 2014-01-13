@@ -1,4 +1,4 @@
-package beego
+package beegae
 
 import (
 	"bytes"
@@ -20,8 +20,10 @@ import (
 	"strings"
 	"time"
 
+	"appengine"
+
+	"github.com/astaxie/beegae/session"
 	"github.com/astaxie/beego/context"
-	"github.com/astaxie/beego/session"
 )
 
 var (
@@ -45,6 +47,7 @@ type Controller struct {
 	CruSession     session.SessionStore
 	XSRFExpire     int
 	AppController  interface{}
+	AppEngineCtx   appengine.Context
 }
 
 // ControllerInterface is an interface to uniform all controller handler.

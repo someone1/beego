@@ -1,4 +1,4 @@
-package beego
+package beegae
 
 import (
 	"html/template"
@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/astaxie/beegae/session"
 	"github.com/astaxie/beego/config"
 	"github.com/astaxie/beego/logs"
-	"github.com/astaxie/beego/session"
 )
 
 var (
