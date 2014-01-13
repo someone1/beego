@@ -2,6 +2,7 @@ package beego
 
 import (
 	"github.com/astaxie/beego/context"
+	"net/http"
 )
 
 // FilterFunc defines filter function type.
@@ -101,4 +102,9 @@ func (app *App) SetStaticPath(url string, path string) *App {
 func (app *App) DelStaticPath(url string) *App {
 	delete(StaticDir, url)
 	return app
+}
+
+// Run beego application.
+func (app *App) Run() {
+	http.Handle("/", app.Handlers)
 }

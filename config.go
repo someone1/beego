@@ -64,7 +64,7 @@ func init() {
 	BeeApp = NewApp()
 
 	// initialize default configurations
-	init_platform()
+	AppPath = ""
 
 	StaticDir = make(map[string]string)
 	StaticDir["/static"] = "static"
