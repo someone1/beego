@@ -3,7 +3,6 @@ package beegae
 import (
 	"bytes"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
@@ -24,6 +23,11 @@ import (
 
 	"github.com/astaxie/beegae/session"
 	"github.com/astaxie/beego/context"
+<<<<<<< HEAD
+=======
+	"github.com/astaxie/beego/session"
+	"github.com/astaxie/beego/utils"
+>>>>>>> c358c1801800c0678fc33eb5c9d151cd8b85fc8d
 )
 
 var (
@@ -47,7 +51,11 @@ type Controller struct {
 	CruSession     session.SessionStore
 	XSRFExpire     int
 	AppController  interface{}
+<<<<<<< HEAD
 	AppEngineCtx   appengine.Context
+=======
+	EnableReander  bool
+>>>>>>> c358c1801800c0678fc33eb5c9d151cd8b85fc8d
 }
 
 // ControllerInterface is an interface to uniform all controller handler.
@@ -77,6 +85,8 @@ func (c *Controller) Init(ctx *context.Context, controllerName, actionName strin
 	c.Ctx = ctx
 	c.TplExt = "tpl"
 	c.AppController = app
+	c.EnableReander = true
+	c.Data = ctx.Input.Data
 }
 
 // Prepare runs after Init before request function execution.
@@ -126,6 +136,9 @@ func (c *Controller) Options() {
 
 // Render sends the response with rendered template bytes as text/html type.
 func (c *Controller) Render() error {
+	if !c.EnableReander {
+		return nil
+	}
 	rb, err := c.RenderBytes()
 
 	if err != nil {
@@ -394,13 +407,16 @@ func (c *Controller) DelSession(name interface{}) {
 // SessionRegenerateID regenerates session id for this session.
 // the session data have no changes.
 func (c *Controller) SessionRegenerateID() {
-	c.CruSession.SessionRelease(c.Ctx.ResponseWriter)
+	if c.CruSession != nil {
+		c.CruSession.SessionRelease(c.Ctx.ResponseWriter)
+	}
 	c.CruSession = GlobalSessions.SessionRegenerateId(c.Ctx.ResponseWriter, c.Ctx.Request)
 	c.Ctx.Input.CruSession = c.CruSession
 }
 
 // DestroySession cleans session data and session cookie.
 func (c *Controller) DestroySession() {
+	c.Ctx.Input.CruSession.Flush()
 	GlobalSessions.SessionDestroy(c.Ctx.ResponseWriter, c.Ctx.Request)
 }
 
@@ -458,7 +474,7 @@ func (c *Controller) XsrfToken() string {
 			} else {
 				expire = int64(XSRFExpire)
 			}
-			token = getRandomString(15)
+			token = string(utils.RandomCreateBytes(15))
 			c.SetSecureCookie(XSRFKEY, "_xsrf", token, expire)
 		}
 		c._xsrf_token = token
@@ -494,15 +510,4 @@ func (c *Controller) XsrfFormHtml() string {
 // GetControllerAndAction gets the executing controller name and action name.
 func (c *Controller) GetControllerAndAction() (controllerName, actionName string) {
 	return c.controllerName, c.actionName
-}
-
-// getRandomString returns random string.
-func getRandomString(n int) string {
-	const alphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	var bytes = make([]byte, n)
-	rand.Read(bytes)
-	for i, b := range bytes {
-		bytes[i] = alphanum[b%byte(len(alphanum))]
-	}
-	return string(bytes)
 }
