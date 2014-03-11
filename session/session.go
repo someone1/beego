@@ -138,11 +138,11 @@ func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (se
 		r.AddCookie(cookie)
 	} else {
 		sid, _ := url.QueryUnescape(cookie.Value)
-		if manager.provider.SessionExist(sid) {
-			session, _ = manager.provider.SessionRead(sid)
+		if manager.provider.SessionExist(sid, c) {
+			session, _ = manager.provider.SessionRead(sid, c)
 		} else {
 			sid = manager.sessionId(r)
-			session, _ = manager.provider.SessionRead(sid)
+			session, _ = manager.provider.SessionRead(sid, c)
 			cookie = &http.Cookie{Name: manager.config.CookieName,
 				Value:    url.QueryEscape(sid),
 				Path:     "/",

@@ -21,8 +21,8 @@ import (
 
 	"appengine"
 
-	"github.com/astaxie/beegae/context"
 	"github.com/astaxie/beegae/session"
+	"github.com/astaxie/beego/context"
 	"github.com/astaxie/beego/utils"
 )
 
@@ -80,6 +80,7 @@ func (c *Controller) Init(ctx *context.Context, controllerName, actionName strin
 	c.AppController = app
 	c.EnableReander = true
 	c.Data = ctx.Input.Data
+	c.AppEngineCtx = appengine.NewContext(ctx.Request)
 }
 
 // Prepare runs after Init before request function execution.
