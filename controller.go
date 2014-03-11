@@ -21,13 +21,9 @@ import (
 
 	"appengine"
 
+	"github.com/astaxie/beegae/context"
 	"github.com/astaxie/beegae/session"
-	"github.com/astaxie/beego/context"
-<<<<<<< HEAD
-=======
-	"github.com/astaxie/beego/session"
 	"github.com/astaxie/beego/utils"
->>>>>>> c358c1801800c0678fc33eb5c9d151cd8b85fc8d
 )
 
 var (
@@ -51,11 +47,8 @@ type Controller struct {
 	CruSession     session.SessionStore
 	XSRFExpire     int
 	AppController  interface{}
-<<<<<<< HEAD
 	AppEngineCtx   appengine.Context
-=======
 	EnableReander  bool
->>>>>>> c358c1801800c0678fc33eb5c9d151cd8b85fc8d
 }
 
 // ControllerInterface is an interface to uniform all controller handler.
