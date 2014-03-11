@@ -209,7 +209,6 @@ func Run() {
 		if err != nil {
 			panic(err)
 		}
-		go GlobalSessions.GC()
 	}
 
 	err := BuildTemplate(ViewsPath)

@@ -185,10 +185,11 @@ func (manager *Manager) GetProvider(sid string) (sessions SessionStore, err erro
 
 // Start session gc process.
 // it can do gc in times after gc lifetime.
-func (manager *Manager) GC() {
-	// Not applicable in AppEngine!
+func (manager *Manager) GC(c appengine.Context) {
+	manager.provider.SessionGC(c)
 	// No such thing as a never ending goroutine...
 	// Create a cronjob + custom handler instead
+	// time.AfterFunc(time.Duration(manager.config.Gclifetime)*time.Second, func() { manager.GC() })
 	return
 }
 
