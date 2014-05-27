@@ -713,10 +713,6 @@ func (p *ControllerRegistor) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Method Not Allowed", 405)
 		goto Admin
 	}
-	//static file server
-	if serverStaticRouter(context) {
-		goto Admin
-	}
 
 	if !context.Input.IsGet() && !context.Input.IsHead() {
 		if CopyRequestBody && !context.Input.IsUpload() {

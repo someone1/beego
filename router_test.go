@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/astaxie/beego/context"
+	"github.com/astaxie/beegae/context"
 )
 
 type TestController struct {

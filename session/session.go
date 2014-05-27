@@ -13,7 +13,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -184,8 +183,8 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get SessionStore by its id.
-func (manager *Manager) GetSessionStore(sid string) (sessions SessionStore, err error) {
-	sessions, err = manager.provider.SessionRead(sid)
+func (manager *Manager) GetSessionStore(sid string, c appengine.Context) (sessions SessionStore, err error) {
+	sessions, err = manager.provider.SessionRead(sid, c)
 	return
 }
 
