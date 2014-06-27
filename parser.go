@@ -3,7 +3,7 @@
 // @link        http://github.com/astaxie/beego for the canonical source repository
 // @license     http://github.com/astaxie/beego/blob/master/LICENSE
 // @authors     astaxie
-package beego
+package beegae
 
 import (
 	"encoding/json"

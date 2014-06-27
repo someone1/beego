@@ -1,9 +1,9 @@
-package beego
+package beegae
 
 import (
 	"encoding/json"
 
-	"github.com/astaxie/beego/context"
+	"github.com/astaxie/beegae/context"
 )
 
 var GlobalDocApi map[string]interface{}

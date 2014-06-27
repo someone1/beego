@@ -76,26 +76,14 @@ func init() {
 	// create beego application
 	BeeApp = NewApp()
 
-	workPath, _ = os.Getwd()
-	workPath, _ = filepath.Abs(workPath)
+	workPath = ""
 	// initialize default configurations
 	AppPath = ""
 
 	AppConfigPath = filepath.Join(AppPath, "conf", "app.conf")
 
-<<<<<<< HEAD
-=======
-	if workPath != AppPath {
-		if utils.FileExists(AppConfigPath) {
-			os.Chdir(AppPath)
-		} else {
-			AppConfigPath = filepath.Join(workPath, "conf", "app.conf")
-		}
-	}
-
 	AppConfigProvider = "ini"
 
->>>>>>> 9c5348f6902d84578134e95b93758f4c17b4a82b
 	StaticDir = make(map[string]string)
 	StaticDir["/static"] = "static"
 
