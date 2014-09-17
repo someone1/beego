@@ -37,8 +37,7 @@ import (
 
 const (
 	// default filter execution points
-	BeforeStatic = iota
-	BeforeRouter
+	BeforeRouter = iota
 	BeforeExec
 	AfterExec
 	FinishRouter
@@ -586,17 +585,6 @@ func (p *ControllerRegistor) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 	// filter wrong httpmethod
 	if _, ok := HTTPMETHOD[r.Method]; !ok {
 		http.Error(w, "Method Not Allowed", 405)
-		goto Admin
-	}
-
-	// filter for static file
-	if do_filter(BeforeStatic) {
-		goto Admin
-	}
-
-	serverStaticRouter(context)
-	if w.started {
-		findrouter = true
 		goto Admin
 	}
 
