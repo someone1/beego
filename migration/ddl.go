@@ -12,27 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package beegae
+package migration
 
-import (
-	"github.com/astaxie/beegae/context"
-	"net/http"
-)
-
-// App defines beego application with a new PatternServeMux.
-type App struct {
-	Handlers *ControllerRegistor
-	Server   *http.Server
+type Table struct {
+	TableName string
+	Columns   []*Column
 }
 
-// NewApp returns a new beego application.
-func NewApp() *App {
-	cr := NewControllerRegister()
-	app := &App{Handlers: cr, Server: &http.Server{}}
-	return app
+func (t *Table) Create() string {
+	return ""
 }
 
-// Run beego application.
-func (app *App) Run() {
-	http.Handle("/", app.Handlers)
+func (t *Table) Drop() string {
+	return ""
+}
+
+type Column struct {
+	Name    string
+	Type    string
+	Default interface{}
+}
+
+func Create(tbname string, columns ...Column) string {
+	return ""
+}
+
+func Drop(tbname string, columns ...Column) string {
+	return ""
+}
+
+func TableDDL(tbname string, columns ...Column) string {
+	return ""
 }
