@@ -37,8 +37,6 @@ import (
 	"time"
 
 	"appengine"
-
-	"github.com/astaxie/beego/utils"
 )
 
 // SessionStore contains all data for one session process with specific id.

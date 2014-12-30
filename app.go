@@ -15,7 +15,6 @@
 package beegae
 
 import (
-	"github.com/astaxie/beegae/context"
 	"net/http"
 )
 

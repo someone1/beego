@@ -14,7 +14,7 @@
 
 package beegae
 
-import "github.com/astaxie/beego/context"
+import "github.com/astaxie/beegae/context"
 
 // FilterFunc defines filter function type.
 type FilterFunc func(*context.Context)
