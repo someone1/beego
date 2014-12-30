@@ -15,10 +15,11 @@
 package beegae
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"appengine/aetest"
 )
 
 type TestFlashController struct {
@@ -35,7 +36,13 @@ func (t *TestFlashController) TestWriteFlash() {
 
 func TestFlashHeader(t *testing.T) {
 	// create fake GET request
-	r, _ := http.NewRequest("GET", "/", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
 
 	// setup the handler

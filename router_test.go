@@ -21,6 +21,8 @@ import (
 	"testing"
 
 	"github.com/astaxie/beegae/context"
+
+	"appengine/aetest"
 )
 
 type TestController struct {
@@ -138,7 +140,13 @@ func TestUrlFor2(t *testing.T) {
 }
 
 func TestUserFunc(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/api/list", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/api/list", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -150,7 +158,13 @@ func TestUserFunc(t *testing.T) {
 }
 
 func TestPostFunc(t *testing.T) {
-	r, _ := http.NewRequest("POST", "/astaxie", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("POST", "/astaxie", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -162,7 +176,13 @@ func TestPostFunc(t *testing.T) {
 }
 
 func TestAutoFunc(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/test/list", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/test/list", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -174,7 +194,13 @@ func TestAutoFunc(t *testing.T) {
 }
 
 func TestAutoFunc2(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/Test/List", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/Test/List", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -186,7 +212,13 @@ func TestAutoFunc2(t *testing.T) {
 }
 
 func TestAutoFuncParams(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/test/params/2009/11/12", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/test/params/2009/11/12", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -198,7 +230,13 @@ func TestAutoFuncParams(t *testing.T) {
 }
 
 func TestAutoExtFunc(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/test/myext.json", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/test/myext.json", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -211,7 +249,13 @@ func TestAutoExtFunc(t *testing.T) {
 
 func TestRouteOk(t *testing.T) {
 
-	r, _ := http.NewRequest("GET", "/person/anderson/thomas?learn=kungfu", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/person/anderson/thomas?learn=kungfu", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -225,7 +269,13 @@ func TestRouteOk(t *testing.T) {
 
 func TestManyRoute(t *testing.T) {
 
-	r, _ := http.NewRequest("GET", "/beego32-12.html", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/beego32-12.html", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -240,7 +290,13 @@ func TestManyRoute(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -254,7 +310,13 @@ func TestNotFound(t *testing.T) {
 // TestStatic tests the ability to serve static
 // content from the filesystem
 func TestStatic(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/static/js/jquery.js", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/static/js/jquery.js", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -266,7 +328,13 @@ func TestStatic(t *testing.T) {
 }
 
 func TestPrepare(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/json/list", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/json/list", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -278,7 +346,13 @@ func TestPrepare(t *testing.T) {
 }
 
 func TestAutoPrefix(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/admin/test/list", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/admin/test/list", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -290,7 +364,13 @@ func TestAutoPrefix(t *testing.T) {
 }
 
 func TestRouterGet(t *testing.T) {
-	r, _ := http.NewRequest("GET", "/user", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("GET", "/user", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -304,7 +384,13 @@ func TestRouterGet(t *testing.T) {
 }
 
 func TestRouterPost(t *testing.T) {
-	r, _ := http.NewRequest("POST", "/user/123", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("POST", "/user/123", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()
@@ -322,7 +408,13 @@ func sayhello(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestRouterHandler(t *testing.T) {
-	r, _ := http.NewRequest("POST", "/sayhi", nil)
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
+	r, _ := inst.NewRequest("POST", "/sayhi", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()

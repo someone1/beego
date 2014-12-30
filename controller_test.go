@@ -16,7 +16,7 @@ package beegae
 
 import (
 	"fmt"
-	"github.com/astaxie/beego/context"
+	"github.com/astaxie/beegae/context"
 )
 
 func ExampleGetInt() {
