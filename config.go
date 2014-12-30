@@ -253,13 +253,8 @@ func init() {
 	FlashName = "BEEGO_FLASH"
 	FlashSeperator = "BEEGOFLASH"
 
-<<<<<<< HEAD
-=======
 	RouterCaseSensitive = true
 
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
->>>>>>> master
 	// init BeeLogger
 	BeeLogger = logs.NewLogger(10000)
 	err := BeeLogger.SetLogger("console", "")
