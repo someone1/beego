@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	beecontext "github.com/astaxie/beego/context"
+	beecontext "github.com/astaxie/beegae/context"
 	"github.com/astaxie/beego/toolbox"
 	"github.com/astaxie/beego/utils"
 )

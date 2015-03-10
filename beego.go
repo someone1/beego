@@ -33,7 +33,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astaxie/beego/session"
+	"github.com/astaxie/beegae/session"
 )
 
 // beego web framework version.
