@@ -18,8 +18,7 @@ import (
 	"net/http"
 	"strings"
 
-	beecontext "github.com/astaxie/beegae/context"
-	"github.com/astaxie/beego/middleware"
+	beecontext "github.com/astaxie/beego/context"
 )
 
 type namespaceCond func(*beecontext.Context) bool
@@ -57,7 +56,7 @@ func NewNamespace(prefix string, params ...innnerNamespace) *Namespace {
 func (n *Namespace) Cond(cond namespaceCond) *Namespace {
 	fn := func(ctx *beecontext.Context) {
 		if !cond(ctx) {
-			middleware.Exception("405", ctx.ResponseWriter, ctx.Request, "Method not allowed")
+			exception("405", ctx)
 		}
 	}
 	if v, ok := n.handlers.filters[BeforeRouter]; ok {
