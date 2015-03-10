@@ -2,11 +2,7 @@
 
 [beego](http://github.com/astaxie/beego) is a Go Framework inspired by tornado and sinatra.
 
-<<<<<<< HEAD
-It is a simple & powerful web framework. Go to the project page to learn more about beego!
-=======
 beego is an open-source, high-performance, modular, full-stack web framework.
->>>>>>> c4aa33fb1b7ee01fa7dcc9bb29bbdf408b47fa72
 
 More info [beego.me](http://beego.me)
 
@@ -16,19 +12,8 @@ The aim of this project is to keep as much of beego unchanged as possible in bee
 
 ## Features
 
-<<<<<<< HEAD
 * Datastore + Memcached backed session store! [read more here](https://github.com/astaxie/beegae/tree/develop/session#beegae-session) to learn how to use it.
 * `AppEngineCtx` is part of the default Controller. View the included sessions package [documentation](https://github.com/astaxie/beegae/tree/develop/session#beegae-session) for an example of using it!
-=======
-* RESTful support
-* MVC architecture
-* Modularity
-* Auto API documents
-* Annotation router
-* Namespace
-* Powerful development tools
-* Full stack for Web & API
->>>>>>> c4aa33fb1b7ee01fa7dcc9bb29bbdf408b47fa72
 
 ## beego Documentation
 
