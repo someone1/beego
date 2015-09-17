@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 
+	nctx "golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"github.com/astaxie/beegae/context"
@@ -71,7 +72,7 @@ type Controller struct {
 	CruSession     session.SessionStore
 	XSRFExpire     int
 	AppController  interface{}
-	AppEngineCtx   appengine.Context
+	AppEngineCtx   nctx.Context
 	EnableRender   bool
 	EnableXSRF     bool
 	methodMapping  map[string]func() //method:routertree

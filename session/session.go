@@ -205,7 +205,7 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 	if err != nil || cookie.Value == "" {
 		return
 	} else {
-		manager.provider.SessionDestroy(cookie.Value, c)
+		manager.provider.SessionDestroy(c, cookie.Value)
 		expiration := time.Now()
 		cookie := http.Cookie{Name: manager.config.CookieName,
 			Path:     "/",
@@ -218,7 +218,7 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 
 // Get SessionStore by its id.
 func (manager *Manager) GetSessionStore(c context.Context, sid string) (sessions SessionStore, err error) {
-	sessions, err = manager.provider.SessionRead(sid, c)
+	sessions, err = manager.provider.SessionRead(c, sid)
 	return
 }
 
