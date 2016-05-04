@@ -42,11 +42,6 @@ func NewApp() *App {
 	return app
 }
 
-// Run beego application.
-func (app *App) Run() {
-	http.Handle("/", app.Handlers)
-}
-
 // Router adds a patterned controller handler to BeeApp.
 // it's an alias method of App.Router.
 // usage:
