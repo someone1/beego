@@ -169,7 +169,7 @@ func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (se
 		return nil, errs
 	}
 
-	if sid != "" && manager.provider.SessionExistc(c, sid) {
+	if sid != "" && manager.provider.SessionExist(c, sid) {
 		return manager.provider.SessionRead(c, sid)
 	}
 

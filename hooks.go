@@ -62,7 +62,6 @@ func registerSession() error {
 		if GlobalSessions, err = session.NewManager(BConfig.WebConfig.Session.SessionProvider, sessionConfig); err != nil {
 			return err
 		}
-		go GlobalSessions.GC()
 	}
 	return nil
 }
@@ -86,8 +85,5 @@ func registerDocs() error {
 }
 
 func registerAdmin() error {
-	if BConfig.Listen.EnableAdmin {
-		go beeAdminApp.Run()
-	}
 	return nil
 }

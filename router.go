@@ -634,7 +634,6 @@ func (p *ControllerRegister) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 		goto Admin
 	}
 
-	serverStaticRouter(context)
 	if context.ResponseWriter.Started {
 		findRouter = true
 		goto Admin
@@ -801,6 +800,7 @@ func (p *ControllerRegister) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 	p.execFilter(context, FinishRouter, urlPath)
 
 Admin:
+	timeDur := time.Since(startTime)
 
 	if BConfig.RunMode == DEV || BConfig.Log.AccessLogs {
 		var devInfo string

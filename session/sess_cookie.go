@@ -1,5 +1,3 @@
-// +build !appengine
-
 // Copyright 2014 beego Author. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +21,8 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 var cookiepder = &CookieProvider{}
@@ -139,7 +139,7 @@ func (pder *CookieProvider) SessionInit(maxlifetime int64, config string) error 
 
 // SessionRead Get SessionStore in cooke.
 // decode cooke string to map and put into SessionStore with sid.
-func (pder *CookieProvider) SessionRead(sid string) (Store, error) {
+func (pder *CookieProvider) SessionRead(c context.Context, sid string) (Store, error) {
 	maps, _ := decodeCookie(pder.block,
 		pder.config.SecurityKey,
 		pder.config.SecurityName,
@@ -152,22 +152,22 @@ func (pder *CookieProvider) SessionRead(sid string) (Store, error) {
 }
 
 // SessionExist Cookie session is always existed
-func (pder *CookieProvider) SessionExist(sid string) bool {
+func (pder *CookieProvider) SessionExist(c context.Context, sid string) bool {
 	return true
 }
 
 // SessionRegenerate Implement method, no used.
-func (pder *CookieProvider) SessionRegenerate(oldsid, sid string) (Store, error) {
+func (pder *CookieProvider) SessionRegenerate(c context.Context, oldsid, sid string) (Store, error) {
 	return nil, nil
 }
 
 // SessionDestroy Implement method, no used.
-func (pder *CookieProvider) SessionDestroy(sid string) error {
+func (pder *CookieProvider) SessionDestroy(c context.Context, sid string) error {
 	return nil
 }
 
 // SessionGC Implement method, no used.
-func (pder *CookieProvider) SessionGC() {
+func (pder *CookieProvider) SessionGC(c context.Context) {
 	return
 }
 

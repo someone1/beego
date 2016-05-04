@@ -296,8 +296,13 @@ func TestManyRoute(t *testing.T) {
 
 // Test for issue #1669
 func TestEmptyResponse(t *testing.T) {
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
 
-	r, _ := http.NewRequest("GET", "/beego-empty.html", nil)
+	r, _ := inst.NewRequest("GET", "/beego-empty.html", nil)
 	w := httptest.NewRecorder()
 
 	handler := NewControllerRegister()

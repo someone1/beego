@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/astaxie/beego/context"
+	"github.com/astaxie/beegae/context"
 	"github.com/astaxie/beego/utils"
 )
 
