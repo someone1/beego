@@ -10,9 +10,15 @@ It is inspired by Tornado, Sinatra and Flask. beego has some Go-specific feature
 
 More info [beego.me](http://beego.me)
 
-**beegae** is a port of beego intended to be used on Google's AppEngine. There are a few subtle differences between how beego and beegae initalizes applications which you can see for yourself here [example](https://github.com/astaxie/beegae/tree/master/example)
+**beegae** is a port of beego intended to be used on Google's AppEngine. There are a few subtle differences between how beego and beegae initializes applications which you can see for yourself here [example](https://github.com/astaxie/beegae/tree/master/example)
 
 The aim of this project is to keep as much of beego unchanged as possible in beegae.
+
+## IMPORTANT UPDATE - Breaking Changes with beegae 1.6.1
+There were changes made to the beego core that were updated in beegae for consistency between packages. Many of these changes are in relation to refactoring various objects in beego as well addressing
+golint recommendations to variable/function names. This may result in minor tweaks to your code (e.g. UrlFor is now URLFor on controllers).
+
+This package now supports both classic AppEngine runtime as well as flexible (formerly Managed VM) runtime.
 
 ## IMPORTANT UPDATE - Breaking Changes with beegae 1.5
 
@@ -26,29 +32,7 @@ This will register the `appengine` session provider so you may use it in your ap
 
 My apologies for any inconvenience this brings to your code. The new package is the recommended approach to Go on AppEngine as it works on both classic AppEngine and Managed VMs, and so beegae was updated to support this recommendation.
 
-Please note: As of writing this package has NOT been tested on Managed VMs.
-
 As always, if there any bugs with the package please open an issue and/or submit a PR.
-
-######Create file `hello.go`
-```go
-package main
-
-import "github.com/astaxie/beego"
-
-func main(){
-    beego.Run()
-}
-```
-######Build and run
-```bash
-    go build hello.go
-    ./hello
-```
-######Congratulations!
-You just built your first beego app.
-Open your browser and visit `http://localhost:8000`.
-Please see [Documentation](http://beego.me/docs) for more.
 
 ## Features
 
@@ -70,8 +54,8 @@ Please see [Documentation](http://beego.me/docs) for more.
 
 This will be a quick overview of how to setup the repository and get started with beegae on AppEngine. It is already assumed that you have setup the AppEngine SDK for Go correctly and setup your GOPATH correctly
 
-* `# goapp get github.com/astaxie/beegae`
-* `# goapp get github.com/beego/bee`
+* `# go get github.com/astaxie/beegae`
+* `# go get github.com/beego/bee`
 * `# cd $GOPATH/src`
 * `# $GOPATH/bin/bee new hellogae`
 * `# cd hellogae`
@@ -81,7 +65,21 @@ This will be a quick overview of how to setup the repository and get started wit
 application: hellobeegae
 version: 1
 runtime: go
+threadsafe: true
 api_version: go1
+
+handlers:
+- url: /.*
+  script: _go_app
+```
+
+or if you are using the flexible runtime:
+
+```yaml
+runtime: go
+vm: true
+threadsafe: true
+api_version: 1
 
 handlers:
 - url: /.*
@@ -90,7 +88,7 @@ handlers:
 * `# gofmt -r '"github.com/astaxie/beego" -> "github.com/astaxie/beegae"' -w ./`
 * `# gofmt -r 'beego -> beegae' -w ./`
 * `# mkdir main && mv main.go main/ && mv app.yaml main/ && mv conf/ main/ && mv views/ main/ && cd main/`
-* Now open `main.go` and change `func main()` to `func init()`
+* If you are using the classic AppeEngine runtime, open `main.go` and change `func main()` to `func init()`, otherwise skip this step.
 * `# goapp serve`
 * Done!
 
