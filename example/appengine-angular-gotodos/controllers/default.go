@@ -46,7 +46,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"models"
+	"github.com/astaxie/beegae/example/appengine-angular-gotodos/models"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"

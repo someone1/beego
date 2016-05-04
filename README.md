@@ -1,8 +1,12 @@
 ## beegae
 
 [beego](http://github.com/astaxie/beego) is a Go Framework inspired by tornado and sinatra.
+[![beego Build Status](https://travis-ci.org/astaxie/beego.svg?branch=master)](https://travis-ci.org/astaxie/beego)
+[![beego GoDoc](http://godoc.org/github.com/astaxie/beego?status.svg)](http://godoc.org/github.com/astaxie/beego)
 
-beego is an open-source, high-performance, modular, full-stack web framework.
+
+beego is used for rapid development of RESTful APIs, web apps and backend services in Go.
+It is inspired by Tornado, Sinatra and Flask. beego has some Go-specific features such as interfaces and struct embedding.
 
 More info [beego.me](http://beego.me)
 
@@ -26,6 +30,26 @@ Please note: As of writing this package has NOT been tested on Managed VMs.
 
 As always, if there any bugs with the package please open an issue and/or submit a PR.
 
+######Create file `hello.go`
+```go
+package main
+
+import "github.com/astaxie/beego"
+
+func main(){
+    beego.Run()
+}
+```
+######Build and run
+```bash
+    go build hello.go
+    ./hello
+```
+######Congratulations!
+You just built your first beego app.
+Open your browser and visit `http://localhost:8000`.
+Please see [Documentation](http://beego.me/docs) for more.
+
 ## Features
 
 * Datastore + Memcached backed session store! [read more here](https://github.com/astaxie/beegae/tree/master/session#beegae-session) to learn how to use it.
@@ -35,10 +59,12 @@ As always, if there any bugs with the package please open an issue and/or submit
 
 * [English](http://beego.me/docs/intro/)
 * [中文文档](http://beego.me/docs/intro/)
+* [Русский](http://beego.me/docs/intro/)
 
 ## Community
 
 * [http://beego.me/community](http://beego.me/community)
+* Welcome to join us in Slack: [https://beego.slack.com](https://beego.slack.com), you can get invited from [here](https://github.com/beego/beedoc/issues/232)
 
 ## Getting Started
 
@@ -70,5 +96,5 @@ handlers:
 
 ## LICENSE
 
-beego is licensed under the Apache Licence, Version 2.0
+beego source code is licensed under the Apache Licence, Version 2.0
 (http://www.apache.org/licenses/LICENSE-2.0.html).
